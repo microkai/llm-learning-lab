@@ -1,0 +1,263 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>神经网络入门：逻辑图</title>
+  <style>
+    :root {
+      --paper: #f6f4ee;
+      --ink: #22231f;
+      --muted: #676a61;
+      --line: #d9d4c7;
+      --teal: #0f766e;
+      --amber: #b86f14;
+      --blue: #315caa;
+      --rose: #a83e51;
+      --white: #ffffff;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      font-family: "Microsoft YaHei", "PingFang SC", "Segoe UI", sans-serif;
+      color: var(--ink);
+      background: var(--paper);
+    }
+
+    header,
+    main {
+      width: min(1180px, calc(100% - 32px));
+      margin: 0 auto;
+    }
+
+    header {
+      padding: 28px 0 18px;
+    }
+
+    h1 {
+      margin: 0 0 10px;
+      font-size: clamp(28px, 4vw, 44px);
+      letter-spacing: 0;
+    }
+
+    p {
+      margin: 0;
+      color: var(--muted);
+      line-height: 1.7;
+    }
+
+    .toolbar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-top: 16px;
+    }
+
+    a {
+      color: var(--blue);
+      font-weight: 700;
+      text-decoration: none;
+    }
+
+    .button {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 9px 12px;
+      background: var(--white);
+      color: var(--ink);
+    }
+
+    .flow {
+      display: grid;
+      grid-template-columns: repeat(5, minmax(180px, 1fr));
+      gap: 12px;
+      overflow-x: auto;
+      padding: 10px 0 26px;
+    }
+
+    .node {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: var(--white);
+      min-height: 205px;
+      padding: 14px;
+      position: relative;
+    }
+
+    .node::after {
+      content: "→";
+      position: absolute;
+      right: -13px;
+      top: 50%;
+      transform: translateY(-50%);
+      color: var(--muted);
+      font-size: 22px;
+      font-weight: 800;
+    }
+
+    .node:last-child::after {
+      content: "";
+    }
+
+    .index {
+      width: 30px;
+      height: 30px;
+      border-radius: 50%;
+      display: grid;
+      place-items: center;
+      color: var(--white);
+      font-weight: 800;
+      background: var(--teal);
+    }
+
+    .node:nth-child(2) .index { background: var(--amber); }
+    .node:nth-child(3) .index { background: var(--blue); }
+    .node:nth-child(4) .index { background: var(--rose); }
+
+    h2 {
+      margin: 12px 0 8px;
+      font-size: 18px;
+      letter-spacing: 0;
+    }
+
+    .code {
+      display: inline-block;
+      margin-top: 12px;
+      border-radius: 6px;
+      padding: 6px 8px;
+      background: #f0eee5;
+      color: var(--ink);
+      font-family: Consolas, "Courier New", monospace;
+      font-size: 13px;
+    }
+
+    .panel {
+      margin: 0 0 34px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: var(--white);
+      overflow: hidden;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+
+    th,
+    td {
+      border-bottom: 1px solid var(--line);
+      padding: 12px;
+      text-align: left;
+      vertical-align: top;
+      line-height: 1.65;
+    }
+
+    th {
+      background: #fbfaf5;
+      font-size: 14px;
+    }
+
+    tr:last-child td {
+      border-bottom: 0;
+    }
+
+    @media (max-width: 980px) {
+      .flow {
+        grid-template-columns: repeat(5, 220px);
+      }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>神经网络入门：逻辑图</h1>
+    <p>这张图把“训练一次”拆成五步。每个节点都标了代码位置，方便你从概念跳回源码。</p>
+    <nav class="toolbar" aria-label="页面导航">
+      <a class="button" href="README.md">主题说明</a>
+      <a class="button" href="code-flow.html">代码流程</a>
+      <a class="button" href="slides.html">PPT 讲义</a>
+      <a class="button" href="demo-web/index.html">互动网页</a>
+      <a class="button" href="demo-project/mlp_from_scratch.py">源码</a>
+    </nav>
+  </header>
+
+  <main>
+    <section class="flow" aria-label="训练流程">
+      <article class="node">
+        <div class="index">1</div>
+        <h2>准备样本</h2>
+        <p>把问题变成模型能吃的数字。异或有四条样本，每条都有两个输入和一个目标答案。</p>
+        <a class="code" href="demo-project/mlp_from_scratch.py#L280">第 280 行</a>
+      </article>
+      <article class="node">
+        <div class="index">2</div>
+        <h2>前向传播</h2>
+        <p>输入先进入隐藏层，再进入输出层。此时模型只是算答案，还没有学习。</p>
+        <a class="code" href="demo-project/mlp_from_scratch.py#L132">第 132 行</a>
+      </article>
+      <article class="node">
+        <div class="index">3</div>
+        <h2>计算损失</h2>
+        <p>预测和目标答案相减，再平方，得到“错得多不多”的数字。</p>
+        <a class="code" href="demo-project/mlp_from_scratch.py#L190">第 190 行</a>
+      </article>
+      <article class="node">
+        <div class="index">4</div>
+        <h2>反向分摊错误</h2>
+        <p>输出层先领一部分责任，隐藏层再根据连接关系接收传回来的责任。</p>
+        <a class="code" href="demo-project/mlp_from_scratch.py#L198">第 198 行</a>
+      </article>
+      <article class="node">
+        <div class="index">5</div>
+        <h2>更新权重</h2>
+        <p>学习率决定每次改多少。重复很多轮以后，损失下降，判断变准。</p>
+        <a class="code" href="demo-project/mlp_from_scratch.py#L210">第 210 行</a>
+      </article>
+    </section>
+
+    <section class="panel" aria-label="代码行号表">
+      <table>
+        <thead>
+          <tr>
+            <th>代码页码</th>
+            <th>对应概念</th>
+            <th>人话解释</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><a href="demo-project/mlp_from_scratch.py#L40">第 40 行</a></td>
+            <td>激活函数</td>
+            <td>把过大或过小的数字压到 0 到 1，方便下一层继续处理。</td>
+          </tr>
+          <tr>
+            <td><a href="demo-project/mlp_from_scratch.py#L55">第 55 行</a></td>
+            <td>点积</td>
+            <td>每个输入乘自己的权重，再把结果加起来，就是神经元的基本计算。</td>
+          </tr>
+          <tr>
+            <td><a href="demo-project/mlp_from_scratch.py#L73">第 73 行</a></td>
+            <td>初始化</td>
+            <td>先随机给权重一个起点，训练时再慢慢改。</td>
+          </tr>
+          <tr>
+            <td><a href="demo-project/mlp_from_scratch.py#L175">第 175 行</a></td>
+            <td>单条样本训练</td>
+            <td>一条样本走完整个流程：预测、算错、分摊、改权重。</td>
+          </tr>
+          <tr>
+            <td><a href="demo-project/mlp_from_scratch.py#L219">第 219 行</a></td>
+            <td>隐藏层梯度</td>
+            <td>隐藏层没有直接答案，只能根据输出层传回来的错误调整自己。</td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+  </main>
+</body>
+</html>

@@ -1,0 +1,360 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>神经网络入门：代码业务流程图</title>
+  <style>
+    :root {
+      --paper: #f6f4ee;
+      --ink: #22231f;
+      --muted: #676a61;
+      --line: #d9d4c7;
+      --white: #ffffff;
+      --teal: #0f766e;
+      --amber: #b86f14;
+      --blue: #315caa;
+      --rose: #a83e51;
+      --green: #2f7d4f;
+      --soft-blue: #e7edf9;
+      --soft-amber: #f5e5cf;
+      --soft-green: #e3f0e8;
+      --soft-rose: #f6e2e7;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      color: var(--ink);
+      background: var(--paper);
+      font-family: "Microsoft YaHei", "PingFang SC", "Segoe UI", sans-serif;
+    }
+
+    header,
+    main {
+      width: min(1180px, calc(100% - 32px));
+      margin: 0 auto;
+    }
+
+    header {
+      padding: 28px 0 18px;
+    }
+
+    h1 {
+      margin: 0 0 10px;
+      font-size: clamp(28px, 4vw, 44px);
+      letter-spacing: 0;
+      line-height: 1.12;
+    }
+
+    p {
+      margin: 0;
+      color: var(--muted);
+      line-height: 1.72;
+    }
+
+    a {
+      color: var(--blue);
+      font-weight: 700;
+      text-decoration: none;
+    }
+
+    .toolbar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-top: 16px;
+    }
+
+    .button {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 9px 12px;
+      color: var(--ink);
+      background: var(--white);
+    }
+
+    .summary {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 12px;
+      margin: 8px 0 18px;
+    }
+
+    .summary-card {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 14px;
+      background: var(--white);
+      min-height: 126px;
+      line-height: 1.68;
+    }
+
+    .summary-card h2 {
+      margin: 0 0 8px;
+      font-size: 18px;
+      letter-spacing: 0;
+    }
+
+    .lanes {
+      display: grid;
+      gap: 16px;
+      padding-bottom: 34px;
+    }
+
+    .lane {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: var(--white);
+      overflow: hidden;
+    }
+
+    .lane-head {
+      display: flex;
+      justify-content: space-between;
+      gap: 16px;
+      padding: 14px 16px;
+      border-bottom: 1px solid var(--line);
+      background: #fbfaf5;
+    }
+
+    .lane-head h2 {
+      margin: 0;
+      font-size: 20px;
+      letter-spacing: 0;
+    }
+
+    .lane-head span {
+      color: var(--muted);
+      line-height: 1.6;
+    }
+
+    .flow {
+      display: grid;
+      grid-template-columns: repeat(6, minmax(164px, 1fr));
+      gap: 12px;
+      overflow-x: auto;
+      padding: 16px;
+    }
+
+    .step {
+      position: relative;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 13px;
+      min-height: 190px;
+      background: #fffdf8;
+      line-height: 1.62;
+    }
+
+    .step::after {
+      content: "→";
+      position: absolute;
+      right: -13px;
+      top: 50%;
+      transform: translateY(-50%);
+      color: var(--muted);
+      font-weight: 900;
+      font-size: 22px;
+    }
+
+    .step:last-child::after {
+      content: "";
+    }
+
+    .step h3 {
+      margin: 0 0 8px;
+      font-size: 17px;
+      letter-spacing: 0;
+    }
+
+    .step p {
+      font-size: 14px;
+      color: var(--muted);
+    }
+
+    .tag {
+      display: inline-block;
+      margin-bottom: 10px;
+      border-radius: 999px;
+      padding: 3px 9px;
+      font-size: 12px;
+      font-weight: 800;
+      color: var(--teal);
+      background: #e5f2ef;
+    }
+
+    .train .step:nth-child(2) { background: var(--soft-blue); }
+    .train .step:nth-child(3) { background: var(--soft-amber); }
+    .train .step:nth-child(4) { background: var(--soft-rose); }
+    .train .step:nth-child(5) { background: var(--soft-green); }
+    .predict .step:nth-child(3) { background: var(--soft-blue); }
+
+    .code {
+      display: inline-block;
+      margin-top: 10px;
+      border-radius: 6px;
+      padding: 5px 7px;
+      background: #f0eee5;
+      color: var(--ink);
+      font-family: Consolas, "Courier New", monospace;
+      font-size: 12px;
+    }
+
+    .callout {
+      border: 1px solid var(--line);
+      border-left: 5px solid var(--teal);
+      border-radius: 8px;
+      padding: 14px 16px;
+      margin-bottom: 18px;
+      background: var(--white);
+      line-height: 1.76;
+    }
+
+    .callout strong {
+      color: var(--ink);
+    }
+
+    @media (max-width: 900px) {
+      .summary {
+        grid-template-columns: 1fr;
+      }
+
+      .lane-head {
+        display: grid;
+      }
+
+      .flow {
+        grid-template-columns: repeat(6, 220px);
+      }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>代码业务流程图</h1>
+    <p>这张图按代码真实运行顺序画。重点看清楚：训练阶段会反复调用前向传播，训练结束后的预测阶段也会调用前向传播。</p>
+    <nav class="toolbar" aria-label="页面导航">
+      <a class="button" href="README.md">主题说明</a>
+      <a class="button" href="slides.html">PPT 讲义</a>
+      <a class="button" href="logic-map.html">逻辑图</a>
+      <a class="button" href="demo-web/index.html">互动网页</a>
+      <a class="button" href="demo-project/mlp_from_scratch.py">源码</a>
+    </nav>
+  </header>
+
+  <main>
+    <section class="summary" aria-label="核心分工">
+      <article class="summary-card">
+        <h2>训练时的 forward</h2>
+        <p>用当前参数先答题，得到 prediction 和中间结果。后面要用这些结果算 loss 和梯度。</p>
+      </article>
+      <article class="summary-card">
+        <h2>预测时的 forward</h2>
+        <p>训练完以后也要答题，但只拿 prediction，不计算 loss，也不修改参数。</p>
+      </article>
+      <article class="summary-card">
+        <h2>区别一句话</h2>
+        <p>训练 = forward + loss + backward + update；预测 = forward。</p>
+      </article>
+    </section>
+
+    <section class="callout">
+      <strong>所以你看到“训练完之后做前向传播”是正常的。</strong>
+      `forward()` 是模型的通用答题函数：训练时用它答题并留下中间过程，预测时也用它答题但不再学习。
+    </section>
+
+    <section class="lane train" aria-label="训练阶段流程">
+      <div class="lane-head">
+        <h2>训练阶段</h2>
+        <span>发生在 `network.train(...)` 里面，会对 4 条样本反复跑很多轮。</span>
+      </div>
+      <div class="flow">
+        <article class="step">
+          <span class="tag">入口</span>
+          <h3>创建网络</h3>
+          <p>`TinyNetwork()` 随机初始化权重和偏置，相当于先给模型一个起点。</p>
+          <a class="code" href="demo-project/mlp_from_scratch.py#L288">第 288 行</a>
+        </article>
+        <article class="step">
+          <span class="tag">循环</span>
+          <h3>进入训练轮次</h3>
+          <p>`train()` 按 epoch 循环，每一轮都把样本拿出来训练一次。</p>
+          <a class="code" href="demo-project/mlp_from_scratch.py#L245">第 245 行</a>
+        </article>
+        <article class="step">
+          <span class="tag">答题</span>
+          <h3>前向传播</h3>
+          <p>`train_one()` 先调用 `forward()`，用当前参数算 prediction。</p>
+          <a class="code" href="demo-project/mlp_from_scratch.py#L180">第 180 行</a>
+        </article>
+        <article class="step">
+          <span class="tag">打分</span>
+          <h3>计算损失</h3>
+          <p>预测值和目标答案相减，再平方，得到这次错得多不多。</p>
+          <a class="code" href="demo-project/mlp_from_scratch.py#L190">第 190 行</a>
+        </article>
+        <article class="step">
+          <span class="tag">算责任</span>
+          <h3>反向传播</h3>
+          <p>从输出层往隐藏层算 delta，也就是每层该承担的错误责任。</p>
+          <a class="code" href="demo-project/mlp_from_scratch.py#L198">第 198 行</a>
+        </article>
+        <article class="step">
+          <span class="tag">改参数</span>
+          <h3>梯度下降</h3>
+          <p>用 `参数 -= learning_rate * gradient` 更新权重和偏置。</p>
+          <a class="code" href="demo-project/mlp_from_scratch.py#L210">第 210 行</a>
+        </article>
+      </div>
+    </section>
+
+    <section class="lane predict" aria-label="预测阶段流程">
+      <div class="lane-head">
+        <h2>预测阶段</h2>
+        <span>发生在训练结束后，只用训练好的参数做判断。</span>
+      </div>
+      <div class="flow">
+        <article class="step">
+          <span class="tag">训练结束</span>
+          <h3>参数已经改好</h3>
+          <p>8000 轮训练后，权重和偏置已经被更新到一个比较好用的位置。</p>
+          <a class="code" href="demo-project/mlp_from_scratch.py#L292">第 292 行</a>
+        </article>
+        <article class="step">
+          <span class="tag">遍历样本</span>
+          <h3>拿输入做测试</h3>
+          <p>代码重新拿 4 条异或样本，只是为了打印训练后的判断结果。</p>
+          <a class="code" href="demo-project/mlp_from_scratch.py#L296">第 296 行</a>
+        </article>
+        <article class="step">
+          <span class="tag">答题</span>
+          <h3>再次前向传播</h3>
+          <p>`predict()` 内部复用 `forward()`，只取 prediction，不算 loss。</p>
+          <a class="code" href="demo-project/mlp_from_scratch.py#L268">第 268 行</a>
+        </article>
+        <article class="step">
+          <span class="tag">转状态</span>
+          <h3>按阈值判断</h3>
+          <p>分数大于等于 0.5 判 1，否则判 0。</p>
+          <a class="code" href="demo-project/mlp_from_scratch.py#L301">第 301 行</a>
+        </article>
+        <article class="step">
+          <span class="tag">输出</span>
+          <h3>打印结果</h3>
+          <p>把输入、预测分数和最终判断打印到命令行。</p>
+          <a class="code" href="demo-project/mlp_from_scratch.py#L304">第 304 行</a>
+        </article>
+        <article class="step">
+          <span class="tag">没有学习</span>
+          <h3>不改参数</h3>
+          <p>预测阶段没有反向传播，也没有梯度下降，所以权重不会再变。</p>
+        </article>
+      </div>
+    </section>
+  </main>
+</body>
+</html>

@@ -1,0 +1,619 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>方向导数和梯度方向可视化</title>
+  <style>
+    :root {
+      --paper: #f6f4ee;
+      --ink: #202124;
+      --muted: #62665d;
+      --line: #d7d1c3;
+      --white: #ffffff;
+      --teal: #0f766e;
+      --blue: #315caa;
+      --amber: #b86f14;
+      --rose: #a83e51;
+      --green: #2f7d4f;
+      --soft-blue: #e7edf9;
+      --soft-amber: #f5e5cf;
+      --soft-green: #e3f0e8;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      color: var(--ink);
+      background: var(--paper);
+      font-family: "Microsoft YaHei", "PingFang SC", "Segoe UI", sans-serif;
+    }
+
+    header,
+    main {
+      width: min(1180px, calc(100% - 32px));
+      margin: 0 auto;
+    }
+
+    header {
+      padding: 24px 0 18px;
+    }
+
+    .nav {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-bottom: 18px;
+    }
+
+    .nav a,
+    button {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 9px 12px;
+      color: var(--ink);
+      background: var(--white);
+      font: inherit;
+      font-weight: 700;
+      text-decoration: none;
+      cursor: pointer;
+    }
+
+    button.primary {
+      color: var(--white);
+      border-color: var(--teal);
+      background: var(--teal);
+    }
+
+    h1 {
+      margin: 0 0 10px;
+      font-size: clamp(28px, 4vw, 44px);
+      line-height: 1.12;
+      letter-spacing: 0;
+    }
+
+    p {
+      margin: 0;
+      color: var(--muted);
+      line-height: 1.75;
+    }
+
+    main {
+      display: grid;
+      grid-template-columns: minmax(0, 1.08fr) minmax(330px, 0.92fr);
+      gap: 16px;
+      padding-bottom: 36px;
+    }
+
+    .panel {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      overflow: hidden;
+      background: var(--white);
+    }
+
+    .panel-head {
+      padding: 14px 16px;
+      border-bottom: 1px solid var(--line);
+      background: #fbfaf5;
+    }
+
+    .panel-head h2 {
+      margin: 0;
+      font-size: 18px;
+      letter-spacing: 0;
+    }
+
+    .panel-body {
+      padding: 16px;
+    }
+
+    .canvas-wrap {
+      position: relative;
+      display: grid;
+      place-items: center;
+      min-height: 520px;
+      background: #fffdf8;
+    }
+
+    canvas {
+      width: min(100%, 640px);
+      max-height: 640px;
+      aspect-ratio: 1;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #f4f2ec;
+    }
+
+    .legend {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 8px;
+      margin-top: 12px;
+    }
+
+    .legend-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      min-height: 38px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 8px;
+      font-size: 13px;
+      color: var(--muted);
+      background: #fffdf8;
+    }
+
+    .swatch {
+      width: 18px;
+      height: 18px;
+      border-radius: 50%;
+      flex: 0 0 auto;
+    }
+
+    .swatch.blue { background: var(--blue); }
+    .swatch.rose { background: var(--rose); }
+    .swatch.green { background: var(--green); }
+
+    .controls {
+      display: grid;
+      gap: 14px;
+    }
+
+    .control {
+      display: grid;
+      grid-template-columns: 96px 1fr 72px;
+      gap: 10px;
+      align-items: center;
+    }
+
+    label {
+      font-weight: 700;
+    }
+
+    input[type="range"] {
+      width: 100%;
+      accent-color: var(--teal);
+    }
+
+    .buttons {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .result {
+      display: grid;
+      gap: 10px;
+      margin-top: 16px;
+    }
+
+    .metric {
+      border-radius: 8px;
+      padding: 12px;
+      line-height: 1.65;
+      background: var(--soft-blue);
+    }
+
+    .metric:nth-child(2) {
+      background: var(--soft-amber);
+    }
+
+    .metric:nth-child(3) {
+      background: var(--soft-green);
+    }
+
+    .metric strong {
+      display: block;
+      color: var(--ink);
+      margin-bottom: 4px;
+    }
+
+    .formula {
+      margin-top: 16px;
+      border-radius: 8px;
+      padding: 12px;
+      color: #f7f7f2;
+      background: #202124;
+      font-family: Consolas, "Courier New", monospace;
+      line-height: 1.75;
+      overflow-wrap: anywhere;
+    }
+
+    .explain {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 10px;
+      margin-top: 16px;
+    }
+
+    .note {
+      border-radius: 8px;
+      min-height: 136px;
+      padding: 12px;
+      background: #fffdf8;
+      border: 1px solid var(--line);
+      line-height: 1.65;
+    }
+
+    .note h3 {
+      margin: 0 0 8px;
+      font-size: 16px;
+      letter-spacing: 0;
+    }
+
+    @media (max-width: 940px) {
+      main,
+      .explain {
+        grid-template-columns: 1fr;
+      }
+
+      .canvas-wrap {
+        min-height: auto;
+      }
+
+      .legend {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <nav class="nav" aria-label="页面导航">
+      <a href="../README.md">主题说明</a>
+      <a href="../code-flow.html">代码流程</a>
+      <a href="index.html">神经元演示</a>
+      <a href="../slides.html">PPT 讲义</a>
+      <a href="../logic-map.html">逻辑图</a>
+    </nav>
+    <h1>方向导数：往这个方向走，loss 会怎么变</h1>
+    <p>这里用二维低维例子展示。当前位置是一个点，蓝色箭头 v 是你选的方向，红色箭头是梯度上坡方向，绿色箭头是负梯度下坡方向。</p>
+  </header>
+
+  <main>
+    <section class="panel">
+      <div class="panel-head">
+        <h2>二维 loss 地形</h2>
+      </div>
+      <div class="panel-body">
+        <div class="canvas-wrap">
+          <canvas id="lossCanvas" width="640" height="640" aria-label="方向导数和梯度可视化画布"></canvas>
+        </div>
+        <div class="legend" aria-label="图例">
+          <div class="legend-item"><span class="swatch blue"></span>蓝色：你选的方向 v</div>
+          <div class="legend-item"><span class="swatch rose"></span>红色：梯度，上升最快</div>
+          <div class="legend-item"><span class="swatch green"></span>绿色：负梯度，下降最快</div>
+        </div>
+        <div class="explain">
+          <article class="note">
+            <h3>v 是什么</h3>
+            <p>v 不是“下一个点”，而是“方向坐标”。如果当前位置是 p，下一小步是 p + 步长 * v。</p>
+          </article>
+          <article class="note">
+            <h3>方向导数</h3>
+            <p>方向导数就是沿着 v 走一丁点时，loss 的变化率。负数表示往下走，正数表示往上走。</p>
+          </article>
+          <article class="note">
+            <h3>梯度</h3>
+            <p>梯度是当前点上升最快方向。梯度反方向，就是当前点下降最快方向。</p>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <aside class="panel">
+      <div class="panel-head">
+        <h2>调当前位置和方向</h2>
+      </div>
+      <div class="panel-body">
+        <div class="controls">
+          <div class="control">
+            <label for="xInput">x 权重</label>
+            <input id="xInput" type="range" min="-3" max="3" step="0.05" value="1.6" />
+            <span id="xValue">1.60</span>
+          </div>
+          <div class="control">
+            <label for="yInput">y 权重</label>
+            <input id="yInput" type="range" min="-3" max="3" step="0.05" value="1.0" />
+            <span id="yValue">1.00</span>
+          </div>
+          <div class="control">
+            <label for="angleInput">方向角</label>
+            <input id="angleInput" type="range" min="0" max="360" step="1" value="210" />
+            <span id="angleValue">210°</span>
+          </div>
+          <div class="control">
+            <label for="stepInput">步长</label>
+            <input id="stepInput" type="range" min="0.05" max="0.8" step="0.05" value="0.35" />
+            <span id="stepValue">0.35</span>
+          </div>
+        </div>
+
+        <div class="buttons">
+          <button class="primary" id="alignDown">把 v 对准负梯度</button>
+          <button id="alignUp">把 v 对准梯度</button>
+          <button id="resetPoint">回到示例点</button>
+        </div>
+
+        <div class="result">
+          <div class="metric">
+            <strong id="lossText">当前位置 loss</strong>
+            <span id="pointText"></span>
+          </div>
+          <div class="metric">
+            <strong id="directionText">方向导数</strong>
+            <span id="meaningText"></span>
+          </div>
+          <div class="metric">
+            <strong>下一小步估计</strong>
+            <span id="stepText"></span>
+          </div>
+        </div>
+
+        <div class="formula" id="formulaText"></div>
+      </div>
+    </aside>
+  </main>
+
+  <script>
+    // Canvas API 解释：canvas 是浏览器自带画布，适合画这种低维地形图。
+    // getContext("2d") 会拿到 2D 画笔，后面用它画点、线、箭头和热力图。
+    const canvas = document.querySelector("#lossCanvas");
+    const ctx = canvas.getContext("2d");
+
+    const inputs = {
+      x: document.querySelector("#xInput"),
+      y: document.querySelector("#yInput"),
+      angle: document.querySelector("#angleInput"),
+      step: document.querySelector("#stepInput")
+    };
+
+    const labels = {
+      x: document.querySelector("#xValue"),
+      y: document.querySelector("#yValue"),
+      angle: document.querySelector("#angleValue"),
+      step: document.querySelector("#stepValue"),
+      point: document.querySelector("#pointText"),
+      meaning: document.querySelector("#meaningText"),
+      stepText: document.querySelector("#stepText"),
+      formula: document.querySelector("#formulaText")
+    };
+
+    const alignDownButton = document.querySelector("#alignDown");
+    const alignUpButton = document.querySelector("#alignUp");
+    const resetPointButton = document.querySelector("#resetPoint");
+
+    const view = {
+      min: -3.4,
+      max: 3.4,
+      size: canvas.width
+    };
+
+    function readNumber(name) {
+      return Number(inputs[name].value);
+    }
+
+    // 这个 loss 是一个碗形地形，最低点在 (0, 0)。
+    // L(x, y) = 0.7x^2 + 0.35xy + 0.25y^2
+    function loss(x, y) {
+      return 0.7 * x * x + 0.35 * x * y + 0.25 * y * y;
+    }
+
+    // 梯度公式来自偏导数：
+    // dL/dx = 1.4x + 0.35y
+    // dL/dy = 0.35x + 0.5y
+    function gradient(x, y) {
+      return {
+        x: 1.4 * x + 0.35 * y,
+        y: 0.35 * x + 0.5 * y
+      };
+    }
+
+    function length(vector) {
+      return Math.hypot(vector.x, vector.y);
+    }
+
+    function normalize(vector) {
+      const size = length(vector);
+      if (size < 0.000001) {
+        return { x: 0, y: 0 };
+      }
+      return { x: vector.x / size, y: vector.y / size };
+    }
+
+    function worldToScreen(point) {
+      const scale = view.size / (view.max - view.min);
+      return {
+        x: (point.x - view.min) * scale,
+        y: view.size - (point.y - view.min) * scale
+      };
+    }
+
+    function screenToWorld(point) {
+      const scale = (view.max - view.min) / view.size;
+      return {
+        x: view.min + point.x * scale,
+        y: view.min + (view.size - point.y) * scale
+      };
+    }
+
+    function colorForLoss(value) {
+      const normalized = Math.min(1, value / 8);
+      const low = { r: 226, g: 241, b: 239 };
+      const mid = { r: 243, g: 213, b: 122 };
+      const high = { r: 168, g: 62, b: 81 };
+      const from = normalized < 0.5 ? low : mid;
+      const to = normalized < 0.5 ? mid : high;
+      const amount = normalized < 0.5 ? normalized * 2 : (normalized - 0.5) * 2;
+      const r = Math.round(from.r + (to.r - from.r) * amount);
+      const g = Math.round(from.g + (to.g - from.g) * amount);
+      const b = Math.round(from.b + (to.b - from.b) * amount);
+      return [r, g, b, 255];
+    }
+
+    function drawHeatmap() {
+      const image = ctx.createImageData(view.size, view.size);
+      const pixels = image.data;
+
+      for (let py = 0; py < view.size; py += 1) {
+        for (let px = 0; px < view.size; px += 1) {
+          const world = screenToWorld({ x: px, y: py });
+          const rgba = colorForLoss(loss(world.x, world.y));
+          const index = (py * view.size + px) * 4;
+          pixels[index] = rgba[0];
+          pixels[index + 1] = rgba[1];
+          pixels[index + 2] = rgba[2];
+          pixels[index + 3] = rgba[3];
+        }
+      }
+
+      ctx.putImageData(image, 0, 0);
+    }
+
+    function drawAxes() {
+      const origin = worldToScreen({ x: 0, y: 0 });
+      ctx.save();
+      ctx.strokeStyle = "rgba(32, 33, 36, 0.28)";
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.moveTo(0, origin.y);
+      ctx.lineTo(view.size, origin.y);
+      ctx.moveTo(origin.x, 0);
+      ctx.lineTo(origin.x, view.size);
+      ctx.stroke();
+      ctx.restore();
+    }
+
+    function drawArrow(startWorld, vector, color, label, scale = 0.65) {
+      const start = worldToScreen(startWorld);
+      const endWorld = {
+        x: startWorld.x + vector.x * scale,
+        y: startWorld.y + vector.y * scale
+      };
+      const end = worldToScreen(endWorld);
+      const angle = Math.atan2(end.y - start.y, end.x - start.x);
+      const head = 13;
+
+      ctx.save();
+      ctx.strokeStyle = color;
+      ctx.fillStyle = color;
+      ctx.lineWidth = 4;
+      ctx.lineCap = "round";
+      ctx.beginPath();
+      ctx.moveTo(start.x, start.y);
+      ctx.lineTo(end.x, end.y);
+      ctx.stroke();
+
+      ctx.beginPath();
+      ctx.moveTo(end.x, end.y);
+      ctx.lineTo(end.x - head * Math.cos(angle - Math.PI / 6), end.y - head * Math.sin(angle - Math.PI / 6));
+      ctx.lineTo(end.x - head * Math.cos(angle + Math.PI / 6), end.y - head * Math.sin(angle + Math.PI / 6));
+      ctx.closePath();
+      ctx.fill();
+
+      ctx.font = "700 16px Microsoft YaHei, sans-serif";
+      ctx.fillText(label, end.x + 8, end.y - 8);
+      ctx.restore();
+    }
+
+    function drawPoint(point, color, radius = 8) {
+      const screen = worldToScreen(point);
+      ctx.save();
+      ctx.fillStyle = color;
+      ctx.strokeStyle = "#ffffff";
+      ctx.lineWidth = 3;
+      ctx.beginPath();
+      ctx.arc(screen.x, screen.y, radius, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.stroke();
+      ctx.restore();
+    }
+
+    function render() {
+      const x = readNumber("x");
+      const y = readNumber("y");
+      const angleDegree = readNumber("angle");
+      const step = readNumber("step");
+      const angle = angleDegree * Math.PI / 180;
+      const direction = { x: Math.cos(angle), y: Math.sin(angle) };
+      const grad = gradient(x, y);
+      const gradSize = length(grad);
+      const gradUnit = normalize(grad);
+      const negativeGradUnit = { x: -gradUnit.x, y: -gradUnit.y };
+      const derivative = grad.x * direction.x + grad.y * direction.y;
+      const currentLoss = loss(x, y);
+      const nextPoint = { x: x + step * direction.x, y: y + step * direction.y };
+      const nextLoss = loss(nextPoint.x, nextPoint.y);
+      const estimatedLoss = currentLoss + step * derivative;
+
+      labels.x.textContent = x.toFixed(2);
+      labels.y.textContent = y.toFixed(2);
+      labels.angle.textContent = `${angleDegree.toFixed(0)}°`;
+      labels.step.textContent = step.toFixed(2);
+
+      drawHeatmap();
+      drawAxes();
+      drawArrow({ x, y }, direction, "#315caa", "v", 0.85);
+      if (gradSize > 0.000001) {
+        drawArrow({ x, y }, gradUnit, "#a83e51", "∇L", 0.75);
+        drawArrow({ x, y }, negativeGradUnit, "#2f7d4f", "-∇L", 0.75);
+      }
+      drawPoint(nextPoint, "#315caa", 6);
+      drawPoint({ x, y }, "#202124", 8);
+
+      const directionMeaning = derivative < -0.02
+        ? "沿着蓝色方向走，loss 会下降。"
+        : derivative > 0.02
+          ? "沿着蓝色方向走，loss 会上升。"
+          : "这个方向几乎不升不降，像贴着等高线走。";
+
+      labels.point.textContent =
+        `p = (${x.toFixed(2)}, ${y.toFixed(2)})，L(p) = ${currentLoss.toFixed(4)}，梯度 = (${grad.x.toFixed(3)}, ${grad.y.toFixed(3)})`;
+      labels.meaning.textContent =
+        `D_v L = ∇L · v = ${derivative.toFixed(4)}。${directionMeaning}`;
+      labels.stepText.textContent =
+        `下一点 p + ${step.toFixed(2)}v = (${nextPoint.x.toFixed(2)}, ${nextPoint.y.toFixed(2)})，真实 loss = ${nextLoss.toFixed(4)}，一阶估计 = ${estimatedLoss.toFixed(4)}`;
+      labels.formula.innerHTML =
+        `L(x, y) = 0.7x² + 0.35xy + 0.25y²<br>` +
+        `∇L = (1.4x + 0.35y, 0.35x + 0.5y)<br>` +
+        `v = (cosθ, sinθ) = (${direction.x.toFixed(3)}, ${direction.y.toFixed(3)})<br>` +
+        `方向导数 D_v L = ∇L · v`;
+    }
+
+    function setDirectionFromVector(vector) {
+      const angle = Math.atan2(vector.y, vector.x) * 180 / Math.PI;
+      inputs.angle.value = String((angle + 360) % 360);
+      render();
+    }
+
+    for (const input of Object.values(inputs)) {
+      input.addEventListener("input", render);
+    }
+
+    alignDownButton.addEventListener("click", () => {
+      const grad = gradient(readNumber("x"), readNumber("y"));
+      setDirectionFromVector({ x: -grad.x, y: -grad.y });
+    });
+
+    alignUpButton.addEventListener("click", () => {
+      const grad = gradient(readNumber("x"), readNumber("y"));
+      setDirectionFromVector(grad);
+    });
+
+    resetPointButton.addEventListener("click", () => {
+      inputs.x.value = "1.6";
+      inputs.y.value = "1.0";
+      inputs.angle.value = "210";
+      inputs.step.value = "0.35";
+      render();
+    });
+
+    render();
+  </script>
+</body>
+</html>

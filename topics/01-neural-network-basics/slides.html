@@ -1,0 +1,455 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>神经网络入门 PPT</title>
+  <style>
+    :root {
+      --paper: #f6f4ee;
+      --ink: #202124;
+      --muted: #62665d;
+      --line: #d7d1c3;
+      --white: #ffffff;
+      --teal: #0f766e;
+      --amber: #b86f14;
+      --blue: #315caa;
+      --rose: #a83e51;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      font-family: "Microsoft YaHei", "PingFang SC", "Segoe UI", sans-serif;
+      color: var(--ink);
+      background: var(--paper);
+    }
+
+    .deck {
+      min-height: 100vh;
+      display: grid;
+      grid-template-rows: auto 1fr auto;
+    }
+
+    nav,
+    footer {
+      width: min(1180px, calc(100% - 32px));
+      margin: 0 auto;
+    }
+
+    nav {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      padding: 16px 0 8px;
+    }
+
+    a,
+    button {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 9px 12px;
+      background: var(--white);
+      color: var(--ink);
+      font: inherit;
+      font-weight: 700;
+      text-decoration: none;
+      cursor: pointer;
+    }
+
+    button.primary {
+      color: var(--white);
+      background: var(--teal);
+      border-color: var(--teal);
+    }
+
+    .slide {
+      width: min(1180px, calc(100% - 32px));
+      margin: 0 auto 16px;
+      min-height: min(680px, calc(100vh - 120px));
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: var(--white);
+      padding: clamp(22px, 4vw, 44px);
+      display: none;
+      overflow: hidden;
+    }
+
+    .slide.active {
+      display: grid;
+      align-content: center;
+      gap: 24px;
+    }
+
+    h1,
+    h2 {
+      margin: 0;
+      letter-spacing: 0;
+      line-height: 1.12;
+    }
+
+    h1 {
+      font-size: clamp(34px, 7vw, 76px);
+    }
+
+    h2 {
+      font-size: clamp(28px, 5vw, 54px);
+    }
+
+    p,
+    li {
+      color: var(--muted);
+      line-height: 1.78;
+      font-size: clamp(16px, 2vw, 20px);
+    }
+
+    ul {
+      margin: 0;
+      padding-left: 1.2em;
+    }
+
+    .two {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 24px;
+      align-items: center;
+    }
+
+    .visual {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      min-height: 320px;
+      padding: 22px;
+      background: #fbfaf5;
+      display: grid;
+      place-items: center;
+    }
+
+    .network {
+      display: grid;
+      grid-template-columns: repeat(3, 130px);
+      gap: 28px;
+      align-items: center;
+    }
+
+    .layer {
+      display: grid;
+      gap: 14px;
+      justify-items: center;
+    }
+
+    .node {
+      width: 78px;
+      aspect-ratio: 1;
+      border-radius: 50%;
+      display: grid;
+      place-items: center;
+      color: var(--white);
+      font-weight: 900;
+      box-shadow: 0 12px 24px rgba(32, 33, 36, 0.15);
+    }
+
+    .input { background: var(--blue); }
+    .hidden { background: var(--amber); }
+    .output { background: var(--rose); }
+
+    .formula {
+      display: grid;
+      gap: 12px;
+      width: min(520px, 100%);
+    }
+
+    .formula div {
+      border-radius: 8px;
+      padding: 14px;
+      background: #f0eee5;
+      font-family: Consolas, "Courier New", monospace;
+      font-size: 18px;
+      overflow-wrap: anywhere;
+    }
+
+    .cards {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 12px;
+    }
+
+    .card {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 14px;
+      min-height: 158px;
+      background: #fffdf8;
+    }
+
+    .card strong {
+      display: block;
+      margin-bottom: 8px;
+      color: var(--ink);
+      font-size: 18px;
+    }
+
+    .code {
+      margin: 0;
+      border-radius: 8px;
+      padding: 16px;
+      background: #202124;
+      color: #f7f7f2;
+      font-family: Consolas, "Courier New", monospace;
+      font-size: 15px;
+      line-height: 1.7;
+      overflow-x: auto;
+    }
+
+    footer {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      padding: 0 0 16px;
+    }
+
+    #counter {
+      color: var(--muted);
+      font-weight: 700;
+    }
+
+    @media (max-width: 880px) {
+      .two,
+      .cards {
+        grid-template-columns: 1fr;
+      }
+
+      .slide {
+        min-height: auto;
+      }
+
+      .network {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="deck">
+    <nav aria-label="页面导航">
+      <a href="README.md">主题说明</a>
+      <a href="code-flow.html">代码流程</a>
+      <a href="demo-web/index.html">互动网页</a>
+      <a href="demo-web/directional-derivative.html">方向导数</a>
+      <a href="logic-map.html">逻辑图</a>
+      <a href="demo-project/mlp_from_scratch.py">源码</a>
+    </nav>
+
+    <main>
+      <section class="slide active">
+        <div class="two">
+          <div>
+            <h1>神经网络入门</h1>
+            <p>这节课只干一件事：看懂一个小网络怎么从错误里学习。异或问题很小，但刚好能把“多层网络为什么有用”讲清楚。</p>
+          </div>
+          <div class="visual">
+            <div class="network" aria-label="2-4-1 网络示意">
+              <div class="layer">
+                <div class="node input">A</div>
+                <div class="node input">B</div>
+              </div>
+              <div class="layer">
+                <div class="node hidden">1</div>
+                <div class="node hidden">2</div>
+                <div class="node hidden">3</div>
+                <div class="node hidden">4</div>
+              </div>
+              <div class="layer">
+                <div class="node output">答</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="slide">
+        <h2>先看目的和流程</h2>
+        <div class="cards">
+          <article class="card">
+            <strong>前向传播</strong>
+            <p>用当前参数先答题，把输入算成 prediction。</p>
+          </article>
+          <article class="card">
+            <strong>计算损失</strong>
+            <p>把 prediction 和参考答案比较，得到错得多不多。</p>
+          </article>
+          <article class="card">
+            <strong>反向传播</strong>
+            <p>从 loss 往回算，找每个参数对错误的责任。</p>
+          </article>
+          <article class="card">
+            <strong>梯度下降</strong>
+            <p>按负梯度方向改参数，让下一轮 loss 更低。</p>
+          </article>
+          <article class="card">
+            <strong>重复训练</strong>
+            <p>一轮轮答题、算错、算责任、改参数。</p>
+          </article>
+          <article class="card">
+            <strong>最终目标</strong>
+            <p>找到一组参数，让异或样本预测足够准。</p>
+          </article>
+        </div>
+      </section>
+
+      <section class="slide">
+        <h2>术语先翻成人话</h2>
+        <div class="cards">
+          <article class="card">
+            <strong>神经元</strong>
+            <p>白话：一个小计算器。它把输入乘权重，加偏置，再输出一个信号。</p>
+          </article>
+          <article class="card">
+            <strong>权重</strong>
+            <p>白话：输入的音量旋钮。权重大，这个输入对答案影响更大。</p>
+          </article>
+          <article class="card">
+            <strong>偏置</strong>
+            <p>白话：基础倾向。没有明显输入时，神经元也可以偏向开或关。</p>
+          </article>
+        </div>
+      </section>
+
+      <section class="slide">
+        <div class="two">
+          <div>
+            <h2>前向传播</h2>
+            <p>前向传播（forward pass，白话：从输入一路算到答案）只负责算，不负责学习。</p>
+            <p>在代码里看第 132 行：输入先进入隐藏层，再进入输出层，最后得到预测分数。</p>
+          </div>
+          <div class="visual">
+            <div class="formula">
+              <div>输入 * 权重 + 偏置 = 原始分数</div>
+              <div>激活函数(原始分数) = 输出分数</div>
+              <div>输出分数 >= 0.5，就判断为 1</div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="slide">
+        <h2>为什么需要损失</h2>
+        <div class="two">
+          <div>
+            <p>损失函数（loss function，白话：把错得多不多变成数字）让模型知道自己离答案有多远。</p>
+            <p>本节用的是“差距平方的一半”。平方会放大大错误，方便模型优先修正明显错误。</p>
+          </div>
+          <pre class="code">error = prediction - target
+loss = 0.5 * error * error</pre>
+        </div>
+      </section>
+
+      <section class="slide">
+        <h2>反向传播在做什么</h2>
+        <div class="cards">
+          <article class="card">
+            <strong>1. 输出层先认错</strong>
+            <p>预测离目标越远，输出层要改得越明显。</p>
+          </article>
+          <article class="card">
+            <strong>2. 隐藏层分摊责任</strong>
+            <p>隐藏层没有直接答案，只能根据输出层传回来的错误调整。</p>
+          </article>
+          <article class="card">
+            <strong>3. 学习率控制步子</strong>
+            <p>步子太小会慢，步子太大可能越改越乱。</p>
+          </article>
+        </div>
+      </section>
+
+      <section class="slide">
+        <h2>为什么这个技术栈适合</h2>
+        <div class="cards">
+          <article class="card">
+            <strong>Python 标准库</strong>
+            <p>不安装依赖。适合把权重、损失、梯度更新全写出来。</p>
+          </article>
+          <article class="card">
+            <strong>HTML + CSS</strong>
+            <p>适合画节点、层、信号流，让抽象概念变成图。</p>
+          </article>
+          <article class="card">
+            <strong>JavaScript</strong>
+            <p>适合滑块互动，拖一下就能看到输出怎么变。</p>
+          </article>
+        </div>
+      </section>
+
+      <section class="slide">
+        <h2>语法配套</h2>
+        <div class="two">
+          <ul>
+            <li>`class`：把网络的数据和动作包在一起。</li>
+            <li>`for` 循环：反复更新每个权重。</li>
+            <li>`enumerate`：同时拿到序号和值，适合改列表里的对应位置。</li>
+            <li>`list[float]`：表示这里期待一组小数。</li>
+          </ul>
+          <pre class="code">for index, hidden_value in enumerate(hidden_outputs):
+    gradient = output_delta * float(hidden_value)
+    self.output_weights[index] -= learning_rate * gradient</pre>
+        </div>
+      </section>
+
+      <section class="slide">
+        <h2>动手改这几个参数</h2>
+        <div class="cards">
+          <article class="card">
+            <strong>训练轮数</strong>
+            <p>`epochs=8000`。改小会看到模型还没学够。</p>
+          </article>
+          <article class="card">
+            <strong>学习率</strong>
+            <p>`learning_rate=0.7`。改太小会慢，改太大可能不稳。</p>
+          </article>
+          <article class="card">
+            <strong>隐藏神经元</strong>
+            <p>`hidden_size = 4`。改成 2 可能更容易卡住。</p>
+          </article>
+        </div>
+      </section>
+    </main>
+
+    <footer>
+      <button id="prev">上一页</button>
+      <span id="counter">1 / 8</span>
+      <button id="next" class="primary">下一页</button>
+    </footer>
+  </div>
+
+  <script>
+    const slides = Array.from(document.querySelectorAll(".slide"));
+    const prev = document.querySelector("#prev");
+    const next = document.querySelector("#next");
+    const counter = document.querySelector("#counter");
+    let current = 0;
+
+    function show(index) {
+      current = Math.max(0, Math.min(index, slides.length - 1));
+      slides.forEach((slide, slideIndex) => {
+        slide.classList.toggle("active", slideIndex === current);
+      });
+      counter.textContent = `${current + 1} / ${slides.length}`;
+      prev.disabled = current === 0;
+      next.disabled = current === slides.length - 1;
+    }
+
+    prev.addEventListener("click", () => show(current - 1));
+    next.addEventListener("click", () => show(current + 1));
+    document.addEventListener("keydown", (event) => {
+      if (event.key === "ArrowLeft") show(current - 1);
+      if (event.key === "ArrowRight") show(current + 1);
+    });
+
+    show(0);
+  </script>
+</body>
+</html>
