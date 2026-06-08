@@ -98,6 +98,7 @@
 - [logic-map.html](logic-map.html)：从框架流程跳到代码行号。
 - [training-pipeline.html](training-pipeline.html)：完整训练流水线，把真实项目的训练工程补齐。
 - [qa-notes.md](qa-notes.md)：追问沉淀笔记，集中记录本节容易卡住的理解点。
+- [dataset-notes.md](dataset-notes.md)：Dataset 阶段设计笔记，整理样本粒度、数据切分、标准化、类别编码、padding、collate_fn 和防泄漏。
 - [demo-project/mini_autograd.py](demo-project/mini_autograd.py)：纯 Python 自动求导 demo。
 - [demo-project/pytorch_xor_optional.py](demo-project/pytorch_xor_optional.py)：可选 PyTorch 版本。
 

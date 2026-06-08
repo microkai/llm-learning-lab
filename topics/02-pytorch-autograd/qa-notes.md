@@ -406,6 +406,12 @@ Dataset / DataLoader：读数据、清洗、转 tensor、组 batch。
 training-pipeline.html
 ```
 
+Dataset 阶段更完整的设计笔记：
+
+```text
+dataset-notes.md
+```
+
 学习顺序建议：
 
 ```text
