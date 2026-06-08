@@ -1,0 +1,5 @@
+# mini_autograd.py 只使用 Python 标准库，不需要第三方依赖。
+#
+# pytorch_xor_optional.py 需要 PyTorch。
+# 请以官方安装页面为准：
+# https://pytorch.org/get-started/locally/

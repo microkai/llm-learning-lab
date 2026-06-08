@@ -1,0 +1,430 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>自动求导互动演示</title>
+  <style>
+    :root {
+      --paper: #f6f4ee;
+      --ink: #202124;
+      --muted: #62665d;
+      --line: #d7d1c3;
+      --white: #ffffff;
+      --teal: #0f766e;
+      --blue: #315caa;
+      --amber: #b86f14;
+      --rose: #a83e51;
+      --green: #2f7d4f;
+      --soft-blue: #e7edf9;
+      --soft-amber: #f5e5cf;
+      --soft-green: #e3f0e8;
+      --soft-rose: #f6e2e7;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      color: var(--ink);
+      background: var(--paper);
+      font-family: "Microsoft YaHei", "PingFang SC", "Segoe UI", sans-serif;
+    }
+
+    header,
+    main {
+      width: min(1180px, calc(100% - 32px));
+      margin: 0 auto;
+    }
+
+    header { padding: 24px 0 18px; }
+
+    .nav {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-bottom: 18px;
+    }
+
+    a,
+    button {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 9px 12px;
+      color: var(--ink);
+      background: var(--white);
+      font: inherit;
+      font-weight: 700;
+      text-decoration: none;
+      cursor: pointer;
+    }
+
+    button.primary {
+      color: var(--white);
+      border-color: var(--teal);
+      background: var(--teal);
+    }
+
+    h1 {
+      margin: 0 0 10px;
+      font-size: clamp(28px, 4vw, 44px);
+      line-height: 1.12;
+      letter-spacing: 0;
+    }
+
+    p {
+      margin: 0;
+      color: var(--muted);
+      line-height: 1.75;
+    }
+
+    main {
+      display: grid;
+      grid-template-columns: minmax(0, 1.08fr) minmax(330px, 0.92fr);
+      gap: 16px;
+      padding-bottom: 36px;
+    }
+
+    .panel {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      overflow: hidden;
+      background: var(--white);
+    }
+
+    .panel-head {
+      padding: 14px 16px;
+      border-bottom: 1px solid var(--line);
+      background: #fbfaf5;
+    }
+
+    .panel-head h2 {
+      margin: 0;
+      font-size: 18px;
+      letter-spacing: 0;
+    }
+
+    .panel-body { padding: 16px; }
+
+    .graph {
+      display: grid;
+      grid-template-columns: repeat(5, minmax(110px, 1fr));
+      gap: 10px;
+      align-items: stretch;
+      margin-bottom: 16px;
+      overflow-x: auto;
+    }
+
+    .node {
+      position: relative;
+      min-height: 132px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 12px;
+      background: #fffdf8;
+      line-height: 1.6;
+    }
+
+    .node::after {
+      content: "→";
+      position: absolute;
+      right: -13px;
+      top: 50%;
+      transform: translateY(-50%);
+      color: var(--muted);
+      font-size: 22px;
+      font-weight: 900;
+    }
+
+    .node:last-child::after { content: ""; }
+    .node:nth-child(1) { background: var(--soft-blue); }
+    .node:nth-child(2) { background: var(--soft-amber); }
+    .node:nth-child(3) { background: var(--soft-green); }
+    .node:nth-child(4) { background: var(--soft-rose); }
+
+    .node strong {
+      display: block;
+      margin-bottom: 6px;
+    }
+
+    .value {
+      font-family: Consolas, "Courier New", monospace;
+      font-weight: 800;
+      color: var(--ink);
+    }
+
+    .controls {
+      display: grid;
+      gap: 14px;
+    }
+
+    .control {
+      display: grid;
+      grid-template-columns: 92px 1fr 70px;
+      gap: 10px;
+      align-items: center;
+    }
+
+    label { font-weight: 700; }
+
+    input[type="range"] {
+      width: 100%;
+      accent-color: var(--teal);
+    }
+
+    .metrics {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 10px;
+      margin-top: 16px;
+    }
+
+    .metric {
+      min-height: 112px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 12px;
+      background: #fffdf8;
+      line-height: 1.65;
+    }
+
+    .metric strong {
+      display: block;
+      margin-bottom: 6px;
+    }
+
+    .formula {
+      margin-top: 16px;
+      border-radius: 8px;
+      padding: 12px;
+      color: #f7f7f2;
+      background: #202124;
+      font-family: Consolas, "Courier New", monospace;
+      line-height: 1.75;
+      overflow-wrap: anywhere;
+    }
+
+    .actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 14px;
+    }
+
+    @media (max-width: 940px) {
+      main,
+      .metrics {
+        grid-template-columns: 1fr;
+      }
+
+      .graph {
+        grid-template-columns: repeat(5, 180px);
+      }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <nav class="nav" aria-label="页面导航">
+      <a href="../README.md">主题说明</a>
+      <a href="../slides.html">PPT 讲义</a>
+      <a href="../logic-map.html">逻辑图</a>
+      <a href="../demo-project/mini_autograd.py">源码</a>
+    </nav>
+    <h1>自动求导：让计算图自己把梯度传回来</h1>
+    <p>拖动参数，看 `prediction = w*x+b` 怎么生成 loss，再看 `backward()` 会给 `w.grad` 和 `b.grad` 算出什么。</p>
+  </header>
+
+  <main>
+    <section class="panel">
+      <div class="panel-head">
+        <h2>计算图</h2>
+      </div>
+      <div class="panel-body">
+        <div class="graph" aria-label="计算图">
+          <article class="node">
+            <strong>参数</strong>
+            <div>w = <span class="value" id="wNode">0.00</span></div>
+            <div>b = <span class="value" id="bNode">0.00</span></div>
+          </article>
+          <article class="node">
+            <strong>前向传播</strong>
+            <div>w*x+b</div>
+            <div class="value" id="predictionNode"></div>
+          </article>
+          <article class="node">
+            <strong>误差</strong>
+            <div>prediction - target</div>
+            <div class="value" id="errorNode"></div>
+          </article>
+          <article class="node">
+            <strong>loss</strong>
+            <div>error²</div>
+            <div class="value" id="lossNode"></div>
+          </article>
+          <article class="node">
+            <strong>backward</strong>
+            <div>w.grad = <span class="value" id="wGradNode"></span></div>
+            <div>b.grad = <span class="value" id="bGradNode"></span></div>
+          </article>
+        </div>
+
+        <div class="metrics">
+          <article class="metric">
+            <strong>为什么要 zero_grad</strong>
+            <p>梯度默认会累加。下一轮训练前要清空旧梯度，不然上一轮责任会混进来。</p>
+          </article>
+          <article class="metric">
+            <strong>为什么要 backward</strong>
+            <p>它沿计算图倒着走，把 loss 对每个参数的影响算出来。</p>
+          </article>
+          <article class="metric">
+            <strong>为什么要 step</strong>
+            <p>它用 `参数 -= 学习率 * 梯度` 真正修改参数。</p>
+          </article>
+        </div>
+
+        <div class="formula" id="formulaText"></div>
+      </div>
+    </section>
+
+    <aside class="panel">
+      <div class="panel-head">
+        <h2>调参数</h2>
+      </div>
+      <div class="panel-body">
+        <div class="controls">
+          <div class="control">
+            <label for="xInput">x</label>
+            <input id="xInput" type="range" min="-3" max="3" step="0.1" value="2" />
+            <span id="xValue">2.0</span>
+          </div>
+          <div class="control">
+            <label for="targetInput">target</label>
+            <input id="targetInput" type="range" min="-6" max="8" step="0.1" value="5" />
+            <span id="targetValue">5.0</span>
+          </div>
+          <div class="control">
+            <label for="wInput">w</label>
+            <input id="wInput" type="range" min="-2" max="4" step="0.1" value="-0.4" />
+            <span id="wValue">-0.4</span>
+          </div>
+          <div class="control">
+            <label for="bInput">b</label>
+            <input id="bInput" type="range" min="-3" max="3" step="0.1" value="0.2" />
+            <span id="bValue">0.2</span>
+          </div>
+          <div class="control">
+            <label for="lrInput">学习率</label>
+            <input id="lrInput" type="range" min="0.01" max="0.2" step="0.01" value="0.05" />
+            <span id="lrValue">0.05</span>
+          </div>
+        </div>
+
+        <div class="actions">
+          <button class="primary" id="stepButton">走一步 step()</button>
+          <button id="resetButton">重置</button>
+          <button id="fitButton">设成 y=2x+1</button>
+        </div>
+      </div>
+    </aside>
+  </main>
+
+  <script>
+    const inputs = {
+      x: document.querySelector("#xInput"),
+      target: document.querySelector("#targetInput"),
+      w: document.querySelector("#wInput"),
+      b: document.querySelector("#bInput"),
+      lr: document.querySelector("#lrInput")
+    };
+
+    const labels = {
+      x: document.querySelector("#xValue"),
+      target: document.querySelector("#targetValue"),
+      w: document.querySelector("#wValue"),
+      b: document.querySelector("#bValue"),
+      lr: document.querySelector("#lrValue"),
+      wNode: document.querySelector("#wNode"),
+      bNode: document.querySelector("#bNode"),
+      prediction: document.querySelector("#predictionNode"),
+      error: document.querySelector("#errorNode"),
+      loss: document.querySelector("#lossNode"),
+      wGrad: document.querySelector("#wGradNode"),
+      bGrad: document.querySelector("#bGradNode"),
+      formula: document.querySelector("#formulaText")
+    };
+
+    const stepButton = document.querySelector("#stepButton");
+    const resetButton = document.querySelector("#resetButton");
+    const fitButton = document.querySelector("#fitButton");
+
+    function readNumber(name) {
+      return Number(inputs[name].value);
+    }
+
+    function compute() {
+      const x = readNumber("x");
+      const target = readNumber("target");
+      const w = readNumber("w");
+      const b = readNumber("b");
+      const lr = readNumber("lr");
+      const prediction = w * x + b;
+      const error = prediction - target;
+      const loss = error * error;
+      const wGrad = 2 * error * x;
+      const bGrad = 2 * error;
+      return { x, target, w, b, lr, prediction, error, loss, wGrad, bGrad };
+    }
+
+    function render() {
+      const item = compute();
+      labels.x.textContent = item.x.toFixed(1);
+      labels.target.textContent = item.target.toFixed(1);
+      labels.w.textContent = item.w.toFixed(1);
+      labels.b.textContent = item.b.toFixed(1);
+      labels.lr.textContent = item.lr.toFixed(2);
+      labels.wNode.textContent = item.w.toFixed(2);
+      labels.bNode.textContent = item.b.toFixed(2);
+      labels.prediction.textContent = `${item.prediction.toFixed(3)}`;
+      labels.error.textContent = `${item.error.toFixed(3)}`;
+      labels.loss.textContent = `${item.loss.toFixed(3)}`;
+      labels.wGrad.textContent = item.wGrad.toFixed(3);
+      labels.bGrad.textContent = item.bGrad.toFixed(3);
+      labels.formula.innerHTML =
+        `prediction = w*x+b = ${item.w.toFixed(2)}*${item.x.toFixed(2)} + ${item.b.toFixed(2)} = ${item.prediction.toFixed(3)}<br>` +
+        `loss = (prediction-target)² = (${item.error.toFixed(3)})² = ${item.loss.toFixed(3)}<br>` +
+        `w.grad = 2*error*x = ${item.wGrad.toFixed(3)}，b.grad = 2*error = ${item.bGrad.toFixed(3)}<br>` +
+        `下一步：w -= lr*w.grad，b -= lr*b.grad`;
+    }
+
+    for (const input of Object.values(inputs)) {
+      input.addEventListener("input", render);
+    }
+
+    stepButton.addEventListener("click", () => {
+      const item = compute();
+      inputs.w.value = String(item.w - item.lr * item.wGrad);
+      inputs.b.value = String(item.b - item.lr * item.bGrad);
+      render();
+    });
+
+    resetButton.addEventListener("click", () => {
+      inputs.x.value = "2";
+      inputs.target.value = "5";
+      inputs.w.value = "-0.4";
+      inputs.b.value = "0.2";
+      inputs.lr.value = "0.05";
+      render();
+    });
+
+    fitButton.addEventListener("click", () => {
+      inputs.w.value = "2";
+      inputs.b.value = "1";
+      render();
+    });
+
+    render();
+  </script>
+</body>
+</html>

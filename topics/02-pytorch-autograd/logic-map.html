@@ -1,0 +1,261 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>PyTorch 和自动求导：逻辑图</title>
+  <style>
+    :root {
+      --paper: #f6f4ee;
+      --ink: #22231f;
+      --muted: #676a61;
+      --line: #d9d4c7;
+      --teal: #0f766e;
+      --blue: #315caa;
+      --amber: #b86f14;
+      --rose: #a83e51;
+      --green: #2f7d4f;
+      --white: #ffffff;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      color: var(--ink);
+      background: var(--paper);
+      font-family: "Microsoft YaHei", "PingFang SC", "Segoe UI", sans-serif;
+    }
+
+    header,
+    main {
+      width: min(1180px, calc(100% - 32px));
+      margin: 0 auto;
+    }
+
+    header { padding: 28px 0 18px; }
+
+    h1 {
+      margin: 0 0 10px;
+      font-size: clamp(28px, 4vw, 44px);
+      line-height: 1.12;
+      letter-spacing: 0;
+    }
+
+    p {
+      margin: 0;
+      color: var(--muted);
+      line-height: 1.7;
+    }
+
+    .toolbar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-top: 16px;
+    }
+
+    a {
+      color: var(--blue);
+      font-weight: 700;
+      text-decoration: none;
+    }
+
+    .button {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 9px 12px;
+      color: var(--ink);
+      background: var(--white);
+    }
+
+    .flow {
+      display: grid;
+      grid-template-columns: repeat(6, minmax(170px, 1fr));
+      gap: 12px;
+      overflow-x: auto;
+      padding: 10px 0 26px;
+    }
+
+    .node {
+      position: relative;
+      min-height: 218px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 14px;
+      background: var(--white);
+    }
+
+    .node::after {
+      content: "→";
+      position: absolute;
+      right: -13px;
+      top: 50%;
+      transform: translateY(-50%);
+      color: var(--muted);
+      font-size: 22px;
+      font-weight: 900;
+    }
+
+    .node:last-child::after { content: ""; }
+
+    .index {
+      width: 30px;
+      height: 30px;
+      border-radius: 50%;
+      display: grid;
+      place-items: center;
+      color: var(--white);
+      background: var(--teal);
+      font-weight: 900;
+    }
+
+    .node:nth-child(2) .index { background: var(--blue); }
+    .node:nth-child(3) .index { background: var(--amber); }
+    .node:nth-child(4) .index { background: var(--rose); }
+    .node:nth-child(5) .index { background: var(--green); }
+
+    h2 {
+      margin: 12px 0 8px;
+      font-size: 18px;
+      letter-spacing: 0;
+    }
+
+    .code {
+      display: inline-block;
+      margin-top: 12px;
+      border-radius: 6px;
+      padding: 6px 8px;
+      color: var(--ink);
+      background: #f0eee5;
+      font-family: Consolas, "Courier New", monospace;
+      font-size: 13px;
+    }
+
+    .panel {
+      margin: 0 0 34px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      overflow: hidden;
+      background: var(--white);
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+
+    th,
+    td {
+      border-bottom: 1px solid var(--line);
+      padding: 12px;
+      text-align: left;
+      vertical-align: top;
+      line-height: 1.65;
+    }
+
+    th {
+      background: #fbfaf5;
+      font-size: 14px;
+    }
+
+    tr:last-child td { border-bottom: 0; }
+
+    @media (max-width: 980px) {
+      .flow { grid-template-columns: repeat(6, 220px); }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>PyTorch 和自动求导：逻辑图</h1>
+    <p>这张图把框架训练流程拆开：记录计算图、自动算梯度、清梯度、更新参数。</p>
+    <nav class="toolbar" aria-label="页面导航">
+      <a class="button" href="README.md">主题说明</a>
+      <a class="button" href="slides.html">PPT 讲义</a>
+      <a class="button" href="demo-web/index.html">互动网页</a>
+      <a class="button" href="demo-project/mini_autograd.py">源码</a>
+    </nav>
+  </header>
+
+  <main>
+    <section class="flow" aria-label="自动求导流程">
+      <article class="node">
+        <div class="index">1</div>
+        <h2>带梯度的数字</h2>
+        <p>`Value` 同时保存 `data` 和 `grad`，像极简版张量。</p>
+        <a class="code" href="demo-project/mini_autograd.py#L19">第 19 行</a>
+      </article>
+      <article class="node">
+        <div class="index">2</div>
+        <h2>前向计算</h2>
+        <p>每次 `+`、`*`、`**` 都会生成新节点，并记录前置节点。</p>
+        <a class="code" href="demo-project/mini_autograd.py#L53">第 53 行</a>
+      </article>
+      <article class="node">
+        <div class="index">3</div>
+        <h2>形成计算图</h2>
+        <p>`_prev` 保存依赖关系，`_backward` 保存梯度怎么往回传。</p>
+        <a class="code" href="demo-project/mini_autograd.py#L35">第 35 行</a>
+      </article>
+      <article class="node">
+        <div class="index">4</div>
+        <h2>backward</h2>
+        <p>从 loss 开始，倒序遍历计算图，自动算每个参数的梯度。</p>
+        <a class="code" href="demo-project/mini_autograd.py#L118">第 118 行</a>
+      </article>
+      <article class="node">
+        <div class="index">5</div>
+        <h2>optimizer</h2>
+        <p>`zero_grad()` 清旧梯度，`step()` 按梯度更新参数。</p>
+        <a class="code" href="demo-project/mini_autograd.py#L176">第 176 行</a>
+      </article>
+      <article class="node">
+        <div class="index">6</div>
+        <h2>训练循环</h2>
+        <p>清梯度、前向、反向、更新，重复很多轮。</p>
+        <a class="code" href="demo-project/mini_autograd.py#L235">第 235 行</a>
+      </article>
+    </section>
+
+    <section class="panel" aria-label="代码行号表">
+      <table>
+        <thead>
+          <tr>
+            <th>代码页码</th>
+            <th>对应概念</th>
+            <th>人话解释</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><a href="demo-project/mini_autograd.py#L29">第 29 行</a></td>
+            <td>`data`</td>
+            <td>当前节点的实际数值。</td>
+          </tr>
+          <tr>
+            <td><a href="demo-project/mini_autograd.py#L32">第 32 行</a></td>
+            <td>`grad`</td>
+            <td>最终 loss 对这个节点的影响程度。</td>
+          </tr>
+          <tr>
+            <td><a href="demo-project/mini_autograd.py#L61">第 61 行</a></td>
+            <td>加法反传</td>
+            <td>加法两边都原样接收输出节点的梯度。</td>
+          </tr>
+          <tr>
+            <td><a href="demo-project/mini_autograd.py#L92">第 92 行</a></td>
+            <td>乘法反传</td>
+            <td>一边的梯度要乘以另一边当前的数值。</td>
+          </tr>
+          <tr>
+            <td><a href="demo-project/mini_autograd.py#L192">第 192 行</a></td>
+            <td>`step()`</td>
+            <td>按 `参数 -= 学习率 * 梯度` 真正改参数。</td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+  </main>
+</body>
+</html>

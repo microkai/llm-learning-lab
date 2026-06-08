@@ -1,0 +1,352 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>PyTorch 和自动求导 PPT</title>
+  <style>
+    :root {
+      --paper: #f6f4ee;
+      --ink: #202124;
+      --muted: #62665d;
+      --line: #d7d1c3;
+      --white: #ffffff;
+      --teal: #0f766e;
+      --blue: #315caa;
+      --amber: #b86f14;
+      --rose: #a83e51;
+      --green: #2f7d4f;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      color: var(--ink);
+      background: var(--paper);
+      font-family: "Microsoft YaHei", "PingFang SC", "Segoe UI", sans-serif;
+    }
+
+    .deck {
+      min-height: 100vh;
+      display: grid;
+      grid-template-rows: auto 1fr auto;
+    }
+
+    nav,
+    footer {
+      width: min(1180px, calc(100% - 32px));
+      margin: 0 auto;
+    }
+
+    nav {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      padding: 16px 0 8px;
+    }
+
+    a,
+    button {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 9px 12px;
+      color: var(--ink);
+      background: var(--white);
+      font: inherit;
+      font-weight: 700;
+      text-decoration: none;
+      cursor: pointer;
+    }
+
+    button.primary {
+      color: var(--white);
+      border-color: var(--teal);
+      background: var(--teal);
+    }
+
+    .slide {
+      width: min(1180px, calc(100% - 32px));
+      min-height: min(680px, calc(100vh - 120px));
+      margin: 0 auto 16px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: clamp(22px, 4vw, 44px);
+      display: none;
+      overflow: hidden;
+      background: var(--white);
+    }
+
+    .slide.active {
+      display: grid;
+      gap: 24px;
+      align-content: center;
+    }
+
+    h1,
+    h2 {
+      margin: 0;
+      line-height: 1.12;
+      letter-spacing: 0;
+    }
+
+    h1 { font-size: clamp(34px, 7vw, 76px); }
+    h2 { font-size: clamp(28px, 5vw, 54px); }
+
+    p,
+    li {
+      color: var(--muted);
+      line-height: 1.78;
+      font-size: clamp(16px, 2vw, 20px);
+    }
+
+    ul {
+      margin: 0;
+      padding-left: 1.2em;
+    }
+
+    .two {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 24px;
+      align-items: center;
+    }
+
+    .visual {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      min-height: 320px;
+      padding: 22px;
+      display: grid;
+      place-items: center;
+      background: #fbfaf5;
+    }
+
+    .cards {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 12px;
+    }
+
+    .card {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      min-height: 156px;
+      padding: 14px;
+      background: #fffdf8;
+      line-height: 1.7;
+    }
+
+    .card strong {
+      display: block;
+      margin-bottom: 8px;
+      color: var(--ink);
+      font-size: 18px;
+    }
+
+    .flow {
+      display: grid;
+      grid-template-columns: repeat(5, minmax(120px, 1fr));
+      gap: 10px;
+      width: 100%;
+    }
+
+    .box {
+      display: grid;
+      place-items: center;
+      min-height: 96px;
+      border-radius: 8px;
+      padding: 10px;
+      text-align: center;
+      font-weight: 900;
+      background: #e7edf9;
+    }
+
+    .box:nth-child(2) { background: #f5e5cf; }
+    .box:nth-child(3) { background: #f6e2e7; }
+    .box:nth-child(4) { background: #e3f0e8; }
+    .box:nth-child(5) { background: #f0eee5; }
+
+    .code {
+      margin: 0;
+      border-radius: 8px;
+      padding: 16px;
+      color: #f7f7f2;
+      background: #202124;
+      font-family: Consolas, "Courier New", monospace;
+      font-size: 15px;
+      line-height: 1.7;
+      overflow-x: auto;
+    }
+
+    footer {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      padding: 0 0 16px;
+    }
+
+    #counter {
+      color: var(--muted);
+      font-weight: 700;
+    }
+
+    @media (max-width: 880px) {
+      .two,
+      .cards {
+        grid-template-columns: 1fr;
+      }
+
+      .slide { min-height: auto; }
+      .flow { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <div class="deck">
+    <nav aria-label="页面导航">
+      <a href="README.md">主题说明</a>
+      <a href="demo-web/index.html">互动网页</a>
+      <a href="logic-map.html">逻辑图</a>
+      <a href="demo-project/mini_autograd.py">源码</a>
+    </nav>
+
+    <main>
+      <section class="slide active">
+        <div class="two">
+          <div>
+            <h1>PyTorch 和自动求导</h1>
+            <p>这一节看框架到底帮你省掉了什么：记录计算图、自动算梯度、用优化器更新参数。</p>
+          </div>
+          <div class="visual">
+            <div class="flow">
+              <div class="box">Tensor / Value</div>
+              <div class="box">forward</div>
+              <div class="box">loss</div>
+              <div class="box">backward</div>
+              <div class="box">step</div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="slide">
+        <h2>先看分工</h2>
+        <div class="cards">
+          <article class="card">
+            <strong>前向传播</strong>
+            <p>用当前参数算 prediction，同时形成计算图。</p>
+          </article>
+          <article class="card">
+            <strong>backward</strong>
+            <p>从 loss 倒着走计算图，自动算每个参数的 grad。</p>
+          </article>
+          <article class="card">
+            <strong>optimizer</strong>
+            <p>读取 grad，按学习率真正更新参数。</p>
+          </article>
+        </div>
+      </section>
+
+      <section class="slide">
+        <h2>术语先翻成人话</h2>
+        <div class="cards">
+          <article class="card">
+            <strong>张量</strong>
+            <p>tensor，白话：能被框架批量计算的多维数字表。</p>
+          </article>
+          <article class="card">
+            <strong>自动求导</strong>
+            <p>autograd，白话：框架沿计算图自动帮你算梯度。</p>
+          </article>
+          <article class="card">
+            <strong>优化器</strong>
+            <p>optimizer，白话：根据梯度改参数的工具。</p>
+          </article>
+        </div>
+      </section>
+
+      <section class="slide">
+        <h2>为什么要 zero_grad</h2>
+        <div class="two">
+          <p>框架里的梯度通常会累加。训练下一轮之前不清空，上一轮的梯度会混进来，更新方向就不干净。</p>
+          <pre class="code">optimizer.zero_grad()
+loss = mean_squared_error(model, samples)
+loss.backward()
+optimizer.step()</pre>
+        </div>
+      </section>
+
+      <section class="slide">
+        <h2>和上一节怎么对应</h2>
+        <div class="cards">
+          <article class="card">
+            <strong>手写前向传播</strong>
+            <p>现在仍然要写，但框架会顺手记录计算图。</p>
+          </article>
+          <article class="card">
+            <strong>手写 hidden_delta</strong>
+            <p>现在由 `loss.backward()` 自动完成。</p>
+          </article>
+          <article class="card">
+            <strong>手动更新权重</strong>
+            <p>现在交给 `optimizer.step()`。</p>
+          </article>
+        </div>
+      </section>
+
+      <section class="slide">
+        <h2>动手改这几个参数</h2>
+        <div class="cards">
+          <article class="card">
+            <strong>学习率</strong>
+            <p>`learning_rate=0.05`。改大看是否震荡，改小看是否变慢。</p>
+          </article>
+          <article class="card">
+            <strong>训练轮数</strong>
+            <p>`range(1, 101)`。改小看 w 和 b 有没有学到位。</p>
+          </article>
+          <article class="card">
+            <strong>训练数据</strong>
+            <p>把样本换成另一条直线，观察参数是否跟着变。</p>
+          </article>
+        </div>
+      </section>
+    </main>
+
+    <footer>
+      <button id="prev">上一页</button>
+      <span id="counter">1 / 6</span>
+      <button id="next" class="primary">下一页</button>
+    </footer>
+  </div>
+
+  <script>
+    const slides = Array.from(document.querySelectorAll(".slide"));
+    const prev = document.querySelector("#prev");
+    const next = document.querySelector("#next");
+    const counter = document.querySelector("#counter");
+    let current = 0;
+
+    function show(index) {
+      current = Math.max(0, Math.min(index, slides.length - 1));
+      slides.forEach((slide, slideIndex) => {
+        slide.classList.toggle("active", slideIndex === current);
+      });
+      counter.textContent = `${current + 1} / ${slides.length}`;
+      prev.disabled = current === 0;
+      next.disabled = current === slides.length - 1;
+    }
+
+    prev.addEventListener("click", () => show(current - 1));
+    next.addEventListener("click", () => show(current + 1));
+    document.addEventListener("keydown", (event) => {
+      if (event.key === "ArrowLeft") show(current - 1);
+      if (event.key === "ArrowRight") show(current + 1);
+    });
+
+    show(0);
+  </script>
+</body>
+</html>
