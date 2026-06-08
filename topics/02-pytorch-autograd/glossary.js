@@ -57,7 +57,7 @@
     },
     {
       title: "step",
-      aliases: ["step", "step()", "optimizer.step()"],
+      aliases: ["step", "step()", "optimizer.step", "optimizer.step()"],
       explain: "优化器走一步。也就是根据当前梯度和学习率，真正修改 w、b 这类可学习参数。"
     },
     {
@@ -79,6 +79,26 @@
       title: "参数 / parameter",
       aliases: ["参数", "parameter", "parameters"],
       explain: "模型训练时会被改动的数字。神经网络学习，本质上就是不断调整这些参数。"
+    },
+    {
+      title: "模型 / model",
+      aliases: ["模型", "model"],
+      explain: "把输入变成输出的一套计算规则。训练前它只是一个会算的结构，训练后参数里才存下经验。"
+    },
+    {
+      title: "特征 / feature",
+      aliases: ["特征", "feature", "features"],
+      explain: "模型能看到的输入信息。比如预测打包耗时时，订单商品件数就是一个特征。"
+    },
+    {
+      title: "批量 / batch",
+      aliases: ["批量", "batch"],
+      explain: "一次拿多条样本一起算。框架喜欢批量计算，因为更快，也能让梯度更稳定。"
+    },
+    {
+      title: "回归 / regression",
+      aliases: ["回归", "regression"],
+      explain: "预测一个连续数值的任务，比如打包耗时、房价、温度。它不是判断类别，而是估一个数。"
     },
     {
       title: "权重 / weight",

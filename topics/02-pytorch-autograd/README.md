@@ -52,13 +52,16 @@
 
 建议按这个顺序看：
 
-1. [slides.html](slides.html)
+1. [scenario.html](scenario.html)
+   预设一个项目需求：根据订单商品件数预测打包耗时。先把 Tensor、target、prediction、loss、grad、backward、optimizer 这些名词放进真实业务里理解。
+
+2. [slides.html](slides.html)
    PPT 式讲解，先用图把“PyTorch 到底替我们做了什么”讲顺。页面里的虚线术语可以悬停查看人话解释。
 
-2. [demo-web/index.html](demo-web/index.html)
+3. [demo-web/index.html](demo-web/index.html)
    互动演示，拖动权重、偏置和学习率，看 loss、梯度、下一步参数怎么变；公式里的英文专有名词也能悬停解释。
 
-3. [logic-map.html](logic-map.html)
+4. [logic-map.html](logic-map.html)
    代码逻辑图，把“前向计算、记录计算图、反向传播、参数更新”对应到 `mini_autograd.py` 的关键行号，并给术语做即时解释。
 
 这些都是静态 HTML，直接在浏览器打开就行，不需要启动服务。
@@ -83,6 +86,7 @@
 ## 文件入口
 
 - [slides.html](slides.html)：PPT 式图文讲义。
+- [scenario.html](scenario.html)：项目需求场景，用订单打包耗时解释术语。
 - [demo-web/index.html](demo-web/index.html)：互动网页，看计算图、梯度和一步更新。
 - [logic-map.html](logic-map.html)：从框架流程跳到代码行号。
 - [demo-project/mini_autograd.py](demo-project/mini_autograd.py)：纯 Python 自动求导 demo。

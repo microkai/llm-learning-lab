@@ -1,0 +1,627 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>项目场景：预测订单打包耗时</title>
+  <link rel="stylesheet" href="glossary.css" />
+  <style>
+    :root {
+      --paper: #f6f4ee;
+      --ink: #202124;
+      --muted: #62665d;
+      --line: #d7d1c3;
+      --white: #ffffff;
+      --teal: #0f766e;
+      --blue: #315caa;
+      --amber: #b86f14;
+      --rose: #a83e51;
+      --green: #2f7d4f;
+      --soft-blue: #e7edf9;
+      --soft-amber: #f5e5cf;
+      --soft-green: #e3f0e8;
+      --soft-rose: #f6e2e7;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      color: var(--ink);
+      background: var(--paper);
+      font-family: "Microsoft YaHei", "PingFang SC", "Segoe UI", sans-serif;
+    }
+
+    header,
+    main {
+      width: min(1180px, calc(100% - 32px));
+      margin: 0 auto;
+    }
+
+    header { padding: 24px 0 18px; }
+
+    .nav {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-bottom: 18px;
+    }
+
+    a,
+    button {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 9px 12px;
+      color: var(--ink);
+      background: var(--white);
+      font: inherit;
+      font-weight: 700;
+      text-decoration: none;
+      cursor: pointer;
+    }
+
+    button.primary {
+      color: var(--white);
+      border-color: var(--teal);
+      background: var(--teal);
+    }
+
+    h1 {
+      margin: 0 0 10px;
+      font-size: clamp(28px, 4vw, 46px);
+      line-height: 1.12;
+      letter-spacing: 0;
+    }
+
+    h2,
+    h3 {
+      margin: 0;
+      letter-spacing: 0;
+    }
+
+    p {
+      margin: 0;
+      color: var(--muted);
+      line-height: 1.75;
+    }
+
+    main {
+      display: grid;
+      gap: 16px;
+      padding-bottom: 36px;
+    }
+
+    .section {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      overflow: hidden;
+      background: var(--white);
+    }
+
+    .section-head {
+      padding: 14px 16px;
+      border-bottom: 1px solid var(--line);
+      background: #fbfaf5;
+    }
+
+    .section-body {
+      padding: 16px;
+    }
+
+    .intro-grid {
+      display: grid;
+      grid-template-columns: minmax(0, 0.95fr) minmax(360px, 1.05fr);
+      gap: 16px;
+      align-items: stretch;
+    }
+
+    .brief {
+      display: grid;
+      gap: 12px;
+    }
+
+    .brief-row {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 13px;
+      background: #fffdf8;
+      line-height: 1.75;
+    }
+
+    .brief-row strong {
+      display: block;
+      margin-bottom: 4px;
+      color: var(--ink);
+    }
+
+    .chart-wrap {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 12px;
+      min-height: 320px;
+      background: #ffffff;
+    }
+
+    canvas {
+      display: block;
+      width: 100%;
+      min-height: 290px;
+    }
+
+    .simulator {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) minmax(330px, 0.85fr);
+      gap: 16px;
+    }
+
+    .flow {
+      display: grid;
+      grid-template-columns: repeat(5, minmax(130px, 1fr));
+      gap: 10px;
+      overflow-x: auto;
+    }
+
+    .flow-step {
+      min-height: 142px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 12px;
+      background: #fffdf8;
+      line-height: 1.65;
+    }
+
+    .flow-step:nth-child(1) { background: var(--soft-blue); }
+    .flow-step:nth-child(2) { background: var(--soft-amber); }
+    .flow-step:nth-child(3) { background: var(--soft-green); }
+    .flow-step:nth-child(4) { background: var(--soft-rose); }
+
+    .flow-step strong {
+      display: block;
+      margin-bottom: 6px;
+    }
+
+    .controls {
+      display: grid;
+      gap: 13px;
+    }
+
+    .control {
+      display: grid;
+      grid-template-columns: 112px 1fr 72px;
+      gap: 10px;
+      align-items: center;
+    }
+
+    label { font-weight: 700; }
+
+    input[type="range"] {
+      width: 100%;
+      accent-color: var(--teal);
+    }
+
+    .formula {
+      margin-top: 14px;
+      border-radius: 8px;
+      padding: 12px;
+      color: #f7f7f2;
+      background: #202124;
+      font-family: Consolas, "Courier New", monospace;
+      line-height: 1.75;
+      overflow-wrap: anywhere;
+    }
+
+    .actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 14px;
+    }
+
+    .mapping {
+      width: 100%;
+      border-collapse: collapse;
+    }
+
+    th,
+    td {
+      border-bottom: 1px solid var(--line);
+      padding: 12px;
+      text-align: left;
+      vertical-align: top;
+      line-height: 1.65;
+    }
+
+    th {
+      background: #fbfaf5;
+      font-size: 14px;
+    }
+
+    tr:last-child td { border-bottom: 0; }
+
+    .term {
+      font-weight: 900;
+      color: var(--teal);
+    }
+
+    @media (max-width: 940px) {
+      .intro-grid,
+      .simulator {
+        grid-template-columns: 1fr;
+      }
+
+      .flow {
+        grid-template-columns: repeat(5, 210px);
+      }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <nav class="nav" aria-label="页面导航">
+      <a href="README.md">主题说明</a>
+      <a href="slides.html">PPT 讲义</a>
+      <a href="demo-web/index.html">自动求导演示</a>
+      <a href="logic-map.html">逻辑图</a>
+      <a href="demo-project/mini_autograd.py">源码</a>
+    </nav>
+    <h1>项目场景：预测订单打包耗时</h1>
+    <p>预设需求：仓库想根据订单商品件数，预测一个订单大概要打包几分钟，用来安排拣货和发货节奏。</p>
+  </header>
+
+  <main>
+    <section class="section">
+      <div class="section-head">
+        <h2>需求先翻成模型语言</h2>
+      </div>
+      <div class="section-body intro-grid">
+        <div class="brief">
+          <article class="brief-row">
+            <strong>业务输入</strong>
+            <p>订单商品件数，记作 x。比如一单有 2 件商品，x 就是 2。</p>
+          </article>
+          <article class="brief-row">
+            <strong>参考答案</strong>
+            <p>历史订单真实打包耗时，记作 target。比如这单实际用了 5 分钟。</p>
+          </article>
+          <article class="brief-row">
+            <strong>模型假设</strong>
+            <p>先用最简单的线性模型：prediction = w*x+b。w 表示每多一件商品增加多少分钟，b 表示基础打包耗时。</p>
+          </article>
+          <article class="brief-row">
+            <strong>训练目标</strong>
+            <p>让 prediction 尽量接近 target。差得越多，loss 越大，参数就越需要调整。</p>
+          </article>
+        </div>
+        <div class="chart-wrap">
+          <canvas id="chart" width="680" height="360" aria-label="订单件数和打包耗时关系图"></canvas>
+        </div>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="section-head">
+        <h2>一次训练到底发生了什么</h2>
+      </div>
+      <div class="section-body simulator">
+        <div>
+          <div class="flow" aria-label="训练流程">
+            <article class="flow-step">
+              <strong>输入样本</strong>
+              <p>x 是订单商品件数，target 是真实耗时。</p>
+            </article>
+            <article class="flow-step">
+              <strong>forward</strong>
+              <p>用当前参数算 prediction。</p>
+            </article>
+            <article class="flow-step">
+              <strong>loss</strong>
+              <p>比较 prediction 和 target，得到这次错得多严重。</p>
+            </article>
+            <article class="flow-step">
+              <strong>backward</strong>
+              <p>算 w.grad 和 b.grad，判断谁该承担多少责任。</p>
+            </article>
+            <article class="flow-step">
+              <strong>optimizer.step</strong>
+              <p>按学习率更新 w 和 b。</p>
+            </article>
+          </div>
+          <div class="formula" id="formulaText"></div>
+        </div>
+
+        <aside>
+          <div class="controls">
+            <div class="control">
+              <label for="xInput">商品件数 x</label>
+              <input id="xInput" type="range" min="1" max="6" step="1" value="2" />
+              <span id="xValue">2</span>
+            </div>
+            <div class="control">
+              <label for="targetInput">真实耗时</label>
+              <input id="targetInput" type="range" min="2" max="14" step="0.5" value="5" />
+              <span id="targetValue">5.0</span>
+            </div>
+            <div class="control">
+              <label for="wInput">w</label>
+              <input id="wInput" type="range" min="-1" max="4" step="0.1" value="0.6" />
+              <span id="wValue">0.6</span>
+            </div>
+            <div class="control">
+              <label for="bInput">b</label>
+              <input id="bInput" type="range" min="-2" max="5" step="0.1" value="0.4" />
+              <span id="bValue">0.4</span>
+            </div>
+            <div class="control">
+              <label for="lrInput">学习率 lr</label>
+              <input id="lrInput" type="range" min="0.01" max="0.15" step="0.01" value="0.04" />
+              <span id="lrValue">0.04</span>
+            </div>
+          </div>
+          <div class="actions">
+            <button class="primary" id="stepButton">训练一步</button>
+            <button id="goodButton">接近历史规律</button>
+            <button id="resetButton">重置</button>
+          </div>
+        </aside>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="section-head">
+        <h2>名词和项目需求怎么对应</h2>
+      </div>
+      <div class="section-body">
+        <table class="mapping">
+          <thead>
+            <tr>
+              <th>名词</th>
+              <th>在这个项目里是什么</th>
+              <th>人话理解</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><span class="term">特征 feature</span></td>
+              <td>订单商品件数 x。</td>
+              <td>模型能看到的输入信息。</td>
+            </tr>
+            <tr>
+              <td><span class="term">target</span></td>
+              <td>历史订单真实打包耗时。</td>
+              <td>参考答案，不是模型猜的，是数据里给的。</td>
+            </tr>
+            <tr>
+              <td><span class="term">参数 parameter</span></td>
+              <td>w 和 b。</td>
+              <td>模型通过训练学出来的经验值。</td>
+            </tr>
+            <tr>
+              <td><span class="term">loss</span></td>
+              <td>预测耗时和真实耗时的差距平方。</td>
+              <td>错得越离谱，这个数字越大。</td>
+            </tr>
+            <tr>
+              <td><span class="term">grad</span></td>
+              <td>w.grad 和 b.grad。</td>
+              <td>告诉我们 w、b 分别该往哪个方向改。</td>
+            </tr>
+            <tr>
+              <td><span class="term">backward</span></td>
+              <td>从 loss 倒着算出 w.grad、b.grad。</td>
+              <td>追责：这次预测错了，哪些参数负责。</td>
+            </tr>
+            <tr>
+              <td><span class="term">optimizer.step</span></td>
+              <td>根据 grad 改 w 和 b。</td>
+              <td>真的动手修正模型经验。</td>
+            </tr>
+            <tr>
+              <td><span class="term">zero_grad</span></td>
+              <td>下一单训练前清空旧 grad。</td>
+              <td>上一单的责任不要混到这一单里。</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+  </main>
+
+  <script src="glossary.js"></script>
+  <script>
+    const historySamples = [
+      { x: 1, y: 3 },
+      { x: 2, y: 5 },
+      { x: 3, y: 7 },
+      { x: 4, y: 9 },
+      { x: 5, y: 11 }
+    ];
+
+    const inputs = {
+      x: document.querySelector("#xInput"),
+      target: document.querySelector("#targetInput"),
+      w: document.querySelector("#wInput"),
+      b: document.querySelector("#bInput"),
+      lr: document.querySelector("#lrInput")
+    };
+
+    const labels = {
+      x: document.querySelector("#xValue"),
+      target: document.querySelector("#targetValue"),
+      w: document.querySelector("#wValue"),
+      b: document.querySelector("#bValue"),
+      lr: document.querySelector("#lrValue"),
+      formula: document.querySelector("#formulaText")
+    };
+
+    const chart = document.querySelector("#chart");
+    const ctx = chart.getContext("2d");
+    const stepButton = document.querySelector("#stepButton");
+    const goodButton = document.querySelector("#goodButton");
+    const resetButton = document.querySelector("#resetButton");
+
+    function readNumber(name) {
+      return Number(inputs[name].value);
+    }
+
+    function compute() {
+      const x = readNumber("x");
+      const target = readNumber("target");
+      const w = readNumber("w");
+      const b = readNumber("b");
+      const lr = readNumber("lr");
+      const prediction = w * x + b;
+      const error = prediction - target;
+      const loss = error * error;
+      const wGrad = 2 * error * x;
+      const bGrad = 2 * error;
+      const nextW = w - lr * wGrad;
+      const nextB = b - lr * bGrad;
+
+      return { x, target, w, b, lr, prediction, error, loss, wGrad, bGrad, nextW, nextB };
+    }
+
+    function drawChart(item) {
+      const width = chart.width;
+      const height = chart.height;
+      const pad = 42;
+      const xMin = 0;
+      const xMax = 6;
+      const yMin = 0;
+      const yMax = 14;
+
+      function px(x) {
+        return pad + (x - xMin) / (xMax - xMin) * (width - pad * 1.6);
+      }
+
+      function py(y) {
+        return height - pad - (y - yMin) / (yMax - yMin) * (height - pad * 1.5);
+      }
+
+      ctx.clearRect(0, 0, width, height);
+      ctx.fillStyle = "#fbfaf5";
+      ctx.fillRect(0, 0, width, height);
+
+      ctx.strokeStyle = "#d7d1c3";
+      ctx.lineWidth = 1;
+      for (let x = 0; x <= 6; x += 1) {
+        ctx.beginPath();
+        ctx.moveTo(px(x), py(0));
+        ctx.lineTo(px(x), py(14));
+        ctx.stroke();
+      }
+      for (let y = 0; y <= 14; y += 2) {
+        ctx.beginPath();
+        ctx.moveTo(px(0), py(y));
+        ctx.lineTo(px(6), py(y));
+        ctx.stroke();
+      }
+
+      ctx.strokeStyle = "#202124";
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.moveTo(px(0), py(0));
+      ctx.lineTo(px(6), py(0));
+      ctx.moveTo(px(0), py(0));
+      ctx.lineTo(px(0), py(14));
+      ctx.stroke();
+
+      ctx.fillStyle = "#62665d";
+      ctx.font = "15px Microsoft YaHei, sans-serif";
+      ctx.fillText("商品件数 x", px(3) - 34, height - 10);
+      ctx.save();
+      ctx.translate(16, py(7) + 36);
+      ctx.rotate(-Math.PI / 2);
+      ctx.fillText("打包耗时 target / prediction", 0, 0);
+      ctx.restore();
+
+      ctx.strokeStyle = "#0f766e";
+      ctx.lineWidth = 4;
+      ctx.beginPath();
+      ctx.moveTo(px(0), py(item.b));
+      ctx.lineTo(px(6), py(item.w * 6 + item.b));
+      ctx.stroke();
+
+      for (const sample of historySamples) {
+        ctx.fillStyle = "#315caa";
+        ctx.beginPath();
+        ctx.arc(px(sample.x), py(sample.y), 6, 0, Math.PI * 2);
+        ctx.fill();
+      }
+
+      ctx.fillStyle = "#a83e51";
+      ctx.beginPath();
+      ctx.arc(px(item.x), py(item.target), 8, 0, Math.PI * 2);
+      ctx.fill();
+
+      ctx.fillStyle = "#b86f14";
+      ctx.beginPath();
+      ctx.arc(px(item.x), py(item.prediction), 8, 0, Math.PI * 2);
+      ctx.fill();
+
+      ctx.strokeStyle = "#a83e51";
+      ctx.lineWidth = 2;
+      ctx.setLineDash([6, 6]);
+      ctx.beginPath();
+      ctx.moveTo(px(item.x), py(item.target));
+      ctx.lineTo(px(item.x), py(item.prediction));
+      ctx.stroke();
+      ctx.setLineDash([]);
+
+      ctx.fillStyle = "#202124";
+      ctx.font = "14px Microsoft YaHei, sans-serif";
+      ctx.fillText("蓝点：历史订单", px(3.7), py(13.2));
+      ctx.fillText("绿线：当前模型", px(3.7), py(12.1));
+      ctx.fillText("红点：真实耗时", px(3.7), py(11));
+      ctx.fillText("橙点：预测耗时", px(3.7), py(9.9));
+    }
+
+    function render() {
+      const item = compute();
+      labels.x.textContent = String(item.x);
+      labels.target.textContent = item.target.toFixed(1);
+      labels.w.textContent = item.w.toFixed(1);
+      labels.b.textContent = item.b.toFixed(1);
+      labels.lr.textContent = item.lr.toFixed(2);
+      labels.formula.innerHTML =
+        `业务公式：prediction = w*x+b = ${item.w.toFixed(2)}*${item.x.toFixed(0)} + ${item.b.toFixed(2)} = ${item.prediction.toFixed(3)} 分钟<br>` +
+        `loss = (prediction-target)² = (${item.error.toFixed(3)})² = ${item.loss.toFixed(3)}<br>` +
+        `backward 得到：w.grad = 2*error*x = ${item.wGrad.toFixed(3)}，b.grad = 2*error = ${item.bGrad.toFixed(3)}<br>` +
+        `optimizer.step 后：w 变成 ${item.nextW.toFixed(3)}，b 变成 ${item.nextB.toFixed(3)}`;
+
+      if (window.LLMLabGlossary) {
+        window.LLMLabGlossary.apply(labels.formula);
+      }
+
+      drawChart(item);
+    }
+
+    for (const input of Object.values(inputs)) {
+      input.addEventListener("input", render);
+    }
+
+    stepButton.addEventListener("click", () => {
+      const item = compute();
+      inputs.w.value = String(item.nextW);
+      inputs.b.value = String(item.nextB);
+      render();
+    });
+
+    goodButton.addEventListener("click", () => {
+      inputs.w.value = "2";
+      inputs.b.value = "1";
+      render();
+    });
+
+    resetButton.addEventListener("click", () => {
+      inputs.x.value = "2";
+      inputs.target.value = "5";
+      inputs.w.value = "0.6";
+      inputs.b.value = "0.4";
+      inputs.lr.value = "0.04";
+      render();
+    });
+
+    render();
+  </script>
+</body>
+</html>
