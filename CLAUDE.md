@@ -69,6 +69,14 @@ demo-project/
 
 选择题正确答案不能全部显示为 A；小计算题输入框不能用正确答案当示例。
 
+## 追问沉淀 hook
+
+如果用户在学习过程中说“记一下”“放到笔记里”“做个 hook”“把这些追问整理一下”，使用 `learning-skills/question-note-hook/SKILL.md`。
+
+默认把追问整理到当前主题的 `qa-notes.md`，不要逐字复制对话，要整理成能复习的知识点。
+
+如果某个追问改变了学习路线或验收标准，同步更新当前主题 `README.md` 或 `checklist.md`。
+
 ## demo 项目标准
 
 `demo-project/` 里的代码必须能独立运行。关键代码注释要写：

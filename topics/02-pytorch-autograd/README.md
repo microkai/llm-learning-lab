@@ -93,6 +93,7 @@
 - [nonlinearity.html](nonlinearity.html)：非线性专题，用业务类比解释 Linear + ReLU。
 - [demo-web/index.html](demo-web/index.html)：互动网页，看计算图、梯度和一步更新。
 - [logic-map.html](logic-map.html)：从框架流程跳到代码行号。
+- [qa-notes.md](qa-notes.md)：追问沉淀笔记，集中记录本节容易卡住的理解点。
 - [demo-project/mini_autograd.py](demo-project/mini_autograd.py)：纯 Python 自动求导 demo。
 - [demo-project/pytorch_xor_optional.py](demo-project/pytorch_xor_optional.py)：可选 PyTorch 版本。
 

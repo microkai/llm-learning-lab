@@ -10,13 +10,14 @@
 
 1. 在 `topics/` 下创建新目录，命名为 `序号-英文短名`。
 2. 创建 `README.md`、`checklist.md`、`slides.html`、`logic-map.html`、`demo-web/index.html`、`demo-project/`。
-3. 在 `README.md` 写清楚：
+3. 如果用户在学习中频繁追问卡点，创建或更新 `qa-notes.md`，按 `learning-skills/question-note-hook/SKILL.md` 沉淀。
+4. 在 `README.md` 写清楚：
    - 学习目标。
    - 为什么这个点和 LLM 有关。
    - 技术栈选择原因。
    - 运行方式。
-4. 所有英文术语第一次出现时，都要有中文名和人话解释。
-5. 更新根目录 `LEARNING.md` 和 `CHECKLIST.md`。
+5. 所有英文术语第一次出现时，都要有中文名和人话解释。
+6. 更新根目录 `LEARNING.md` 和 `CHECKLIST.md`。
 
 ## 完成标准
 

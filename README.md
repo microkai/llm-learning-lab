@@ -32,6 +32,7 @@ llm-learning-lab/
 - `demo-web/index.html`：浏览器可打开的演示网页，图文都有，文字用中文转义和人话解释。
 - `logic-map.html`：整体逻辑图，节点要能指到代码行号。
 - `demo-project/`：实践 demo 项目，代码有学习型注释。
+- `qa-notes.md`：学习中临时追问出的卡点沉淀笔记。
 
 ## Demo 代码注释规则
 

@@ -8,5 +8,6 @@
 - [demo-web-builder](demo-web-builder/SKILL.md)：给知识点做图文互动网页。
 - [demo-project-builder](demo-project-builder/SKILL.md)：给知识点做实践 demo 项目。
 - [quiz-builder](quiz-builder/SKILL.md)：给知识点做互动练习题和题库自检。
+- [question-note-hook](question-note-hook/SKILL.md)：把学习中临时追问出的关键卡点沉淀到主题 `qa-notes.md`。
 
 它们的目的：让每次学习不是临时发挥，而是稳定产出讲义、网页、代码和复盘清单。
