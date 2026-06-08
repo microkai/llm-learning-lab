@@ -415,6 +415,295 @@ training-pipeline.html
 最后看 state_dict 如何保存和加载模型
 ```
 
+## 不同数据类型的 Dataset 注释版
+
+Dataset 的核心职责是：
+
+```text
+原始数据的一条记录
+-> 清洗 / 转换 / 编码
+-> feature tensor + target tensor
+```
+
+DataLoader 会在 Dataset 外面再加一个 batch 维度。
+
+### 表格数据
+
+适合订单、库存、价格、用户行为这类结构化字段。
+
+```python
+class OrderDataset(Dataset):
+    def __init__(self, rows):
+        # rows 是已经整理好的一行一条样本的数据。
+        # 常见来源：list[dict]、pandas DataFrame 转成的 records、CSV 读取结果。
+        self.rows = rows
+
+    def __len__(self):
+        # 告诉 DataLoader 这个数据集一共有多少条样本。
+        # DataLoader 会用它判断能取多少次 index。
+        return len(self.rows)
+
+    def __getitem__(self, index):
+        # index 是 DataLoader 要取的样本编号。
+        # 这里拿出第 index 行业务数据。
+        row = self.rows[index]
+
+        # features 是模型能看到的输入字段。
+        # dtype=torch.float32 表示这些是浮点数，适合参与神经网络计算。
+        features = torch.tensor([
+            row["item_count"],       # 商品件数
+            row["stock"],            # 当前库存
+            row["warehouse_load"],   # 仓库负载
+        ], dtype=torch.float32)
+
+        # target 是参考答案。
+        # 二分类里可以是 0/1；回归里可以是具体数值。
+        target = torch.tensor([row["is_delay"]], dtype=torch.float32)
+
+        # 返回一条样本。
+        # DataLoader 会把很多条 features 拼成 [batch_size, 3]。
+        # targets 会拼成 [batch_size, 1]。
+        return features, target
+```
+
+这段代码的意义：
+
+```text
+把一行业务字段翻译成一个数字向量。
+模型不认识 dict，也不认识字段名，模型只吃 tensor。
+```
+
+### 图片数据
+
+适合包裹破损识别、商品图片分类、质检图片判断。
+
+```python
+class ImageDataset(Dataset):
+    def __init__(self, rows, transform):
+        # rows 里通常保存图片路径和标签。
+        # transform 负责 resize、转 tensor、标准化等图片预处理。
+        self.rows = rows
+        self.transform = transform
+
+    def __len__(self):
+        # 返回图片样本总数。
+        return len(self.rows)
+
+    def __getitem__(self, index):
+        # 取出当前图片样本的元信息。
+        row = self.rows[index]
+
+        # Image.open 读取图片文件。
+        # convert("RGB") 保证图片统一是 3 个颜色通道。
+        image = Image.open(row["image_path"]).convert("RGB")
+
+        # transform 把 PIL 图片变成 PyTorch tensor。
+        # 常见输出 shape 是 [3, H, W]。
+        image_tensor = self.transform(image)
+
+        # 分类任务的 target 通常是类别编号。
+        # dtype=torch.long 是 CrossEntropyLoss 常用的标签类型。
+        target = torch.tensor(row["label"], dtype=torch.long)
+
+        # DataLoader 后，image_tensor 会变成 [batch_size, 3, H, W]。
+        return image_tensor, target
+```
+
+这段代码的意义：
+
+```text
+把图片文件路径翻译成 RGB 像素张量。
+图片进入模型前，必须统一尺寸、通道和数值范围。
+```
+
+### 文本数据
+
+适合评论分类、客服意图识别、订单备注风险判断。
+
+```python
+class TextDataset(Dataset):
+    def __init__(self, rows, tokenizer):
+        # rows 保存文本和标签。
+        # tokenizer 负责把字符串转成 token id。
+        # PyTorch 本身不会自动理解字符串。
+        self.rows = rows
+        self.tokenizer = tokenizer
+
+    def __len__(self):
+        # 返回文本样本总数。
+        return len(self.rows)
+
+    def __getitem__(self, index):
+        # 取出当前文本样本。
+        row = self.rows[index]
+
+        # tokenizer 把原始文本转成模型能吃的编号。
+        # padding="max_length" 表示补齐到固定长度。
+        # truncation=True 表示太长就截断。
+        # return_tensors="pt" 表示返回 PyTorch tensor。
+        encoded = self.tokenizer(
+            row["text"],
+            max_length=128,
+            padding="max_length",
+            truncation=True,
+            return_tensors="pt",
+        )
+
+        # tokenizer 返回时通常带 batch 维度：[1, seq_len]。
+        # squeeze(0) 去掉这个临时维度，变成 [seq_len]。
+        input_ids = encoded["input_ids"].squeeze(0)
+        attention_mask = encoded["attention_mask"].squeeze(0)
+
+        # 文本分类任务的 target 通常是类别编号。
+        target = torch.tensor(row["label"], dtype=torch.long)
+
+        # 返回 token id、mask 和标签。
+        # DataLoader 后 shape 会变成：
+        # input_ids: [batch_size, seq_len]
+        # attention_mask: [batch_size, seq_len]
+        return input_ids, attention_mask, target
+```
+
+这段代码的意义：
+
+```text
+把自然语言字符串翻译成 token id。
+模型后面会用 embedding 把 token id 再变成向量。
+```
+
+### 音频数据
+
+适合语音分类、异常声音检测、客服录音情绪识别。
+
+```python
+class AudioDataset(Dataset):
+    def __init__(self, rows):
+        # rows 保存音频文件路径和标签。
+        self.rows = rows
+
+    def __len__(self):
+        # 返回音频样本总数。
+        return len(self.rows)
+
+    def __getitem__(self, index):
+        # 取出当前音频样本。
+        row = self.rows[index]
+
+        # torchaudio.load 读取音频文件。
+        # waveform 是波形张量，常见 shape 是 [channels, time]。
+        # sample_rate 是采样率，比如 16000，表示每秒多少个采样点。
+        waveform, sample_rate = torchaudio.load(row["audio_path"])
+
+        # 分类标签。
+        target = torch.tensor(row["label"], dtype=torch.long)
+
+        # DataLoader 后 waveform 会多一个 batch 维度。
+        # 如果音频长度不一致，还需要额外做裁剪、补齐或自定义 collate_fn。
+        return waveform, target
+```
+
+这段代码的意义：
+
+```text
+把音频文件翻译成波形张量。
+真实项目里经常还会把 waveform 转成 spectrogram 频谱图。
+```
+
+### 视频数据
+
+适合动作识别、质检视频判断、监控事件检测。
+
+```python
+class VideoDataset(Dataset):
+    def __init__(self, rows, read_frames):
+        # rows 保存视频路径和标签。
+        # read_frames 是你自己准备的函数，负责抽帧、resize、转 tensor。
+        self.rows = rows
+        self.read_frames = read_frames
+
+    def __len__(self):
+        # 返回视频样本总数。
+        return len(self.rows)
+
+    def __getitem__(self, index):
+        # 取出当前视频样本。
+        row = self.rows[index]
+
+        # read_frames 把视频变成多帧图片张量。
+        # 常见 shape 是 [T, 3, H, W]。
+        # T 是帧数，3 是 RGB 通道。
+        frames = self.read_frames(row["video_path"])
+
+        # 分类标签。
+        target = torch.tensor(row["label"], dtype=torch.long)
+
+        # DataLoader 后 shape 通常变成 [batch_size, T, 3, H, W]。
+        return frames, target
+```
+
+这段代码的意义：
+
+```text
+把视频文件翻译成带时间维度的图片序列。
+视频 = 多张图片按时间排列。
+```
+
+### 视频 + 音频
+
+适合直播内容判断、视频质检、带声音的行为识别。
+
+```python
+class VideoAudioDataset(Dataset):
+    def __init__(self, rows, read_frames):
+        # rows 保存视频路径、音频路径和标签。
+        # read_frames 负责视频抽帧。
+        self.rows = rows
+        self.read_frames = read_frames
+
+    def __len__(self):
+        # 返回多模态样本总数。
+        return len(self.rows)
+
+    def __getitem__(self, index):
+        # 取出当前样本。
+        row = self.rows[index]
+
+        # 视频分支输入：多帧图片张量。
+        frames = self.read_frames(row["video_path"])
+
+        # 音频分支输入：波形张量。
+        waveform, sample_rate = torchaudio.load(row["audio_path"])
+
+        # 共同 target：比如视频类别、风险标签、是否违规。
+        target = torch.tensor(row["label"], dtype=torch.long)
+
+        # 多模态数据常用 dict 返回。
+        # forward 里可以按 key 分别取 frames 和 audio。
+        return {
+            "frames": frames,
+            "audio": waveform,
+            "target": target,
+        }
+```
+
+这段代码的意义：
+
+```text
+一个样本可以返回多个 tensor。
+模型里通常会有视频分支和音频分支，分别提取特征后再融合。
+```
+
+统一记法：
+
+```text
+表格 -> 数字向量 tensor
+图片 -> [3, H, W]
+文本 -> [seq_len] token id
+音频 -> [channels, time]
+视频 -> [T, 3, H, W]
+视频 + 音频 -> dict，里面放多个 tensor
+```
+
 ## 这一段的总总结
 
 ```text
