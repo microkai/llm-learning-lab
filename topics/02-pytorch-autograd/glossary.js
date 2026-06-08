@@ -111,6 +111,71 @@
       explain: "一次拿多条样本一起算。框架喜欢批量计算，因为更快，也能让梯度更稳定。"
     },
     {
+      title: "Dataset / 数据集对象",
+      aliases: ["Dataset"],
+      explain: "PyTorch 里负责提供单条样本的对象。人话说，它知道怎么从原始数据拿出 feature 和 target。"
+    },
+    {
+      title: "DataLoader / 数据加载器",
+      aliases: ["DataLoader"],
+      explain: "把 Dataset 里的单条样本组成 batch，并能打乱顺序。训练 loop 通常从它这里一批批拿数据。"
+    },
+    {
+      title: "train / 训练模式",
+      aliases: ["model.train()", "train mode", "训练模式"],
+      explain: "把模型切到训练状态。Dropout、BatchNorm 这类层会使用训练时的行为。"
+    },
+    {
+      title: "eval / 评估模式",
+      aliases: ["model.eval()", "eval mode", "评估模式"],
+      explain: "把模型切到验证或预测状态。Dropout 会关闭，BatchNorm 会使用稳定统计。"
+    },
+    {
+      title: "no_grad / 不记录梯度",
+      aliases: ["torch.no_grad()", "no_grad"],
+      explain: "告诉 PyTorch 这段计算不需要计算图和梯度。验证和预测常用它来省内存、避免误训练。"
+    },
+    {
+      title: "validation / 验证集",
+      aliases: ["validation", "validation loop", "验证集", "验证循环", "val_loader"],
+      explain: "不用来更新参数的数据。它负责检查模型是不是学到可泛化规律，而不是只背训练集。"
+    },
+    {
+      title: "state_dict / 参数字典",
+      aliases: ["state_dict", "state_dict()"],
+      explain: "模型参数的字典。常用来保存和加载模型，不直接保存整个训练过程。"
+    },
+    {
+      title: "device / 计算设备",
+      aliases: ["device", "CPU", "GPU", ".to(device)"],
+      explain: "张量和模型所在的计算设备。模型和输入必须在同一个 device 上才能一起计算。"
+    },
+    {
+      title: "scheduler / 学习率调度器",
+      aliases: ["scheduler", "lr_scheduler"],
+      explain: "训练过程中调整学习率的工具。人话说，前期步子大一点，后期步子小一点。"
+    },
+    {
+      title: "early stopping / 提前停止",
+      aliases: ["early stopping"],
+      explain: "验证集长期不变好就停止训练，避免继续把训练集噪音背下来。"
+    },
+    {
+      title: "logit / 原始分数",
+      aliases: ["logit", "logits"],
+      explain: "分类模型输出的原始分数，还不是概率。很多 loss 会在内部把 logit 转成更稳定的概率计算。"
+    },
+    {
+      title: "sigmoid / 二分类压缩函数",
+      aliases: ["sigmoid"],
+      explain: "把一个原始分数压到 0 到 1，常用来表示二分类概率。"
+    },
+    {
+      title: "softmax / 多分类归一化",
+      aliases: ["softmax"],
+      explain: "把多个类别分数变成一组概率，总和为 1。多分类预测时常用。"
+    },
+    {
       title: "回归 / regression",
       aliases: ["回归", "regression"],
       explain: "预测一个连续数值的任务，比如打包耗时、房价、温度。它不是判断类别，而是估一个数。"

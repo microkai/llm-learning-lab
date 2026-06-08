@@ -1,0 +1,550 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>PyTorch 完整训练流水线</title>
+  <link rel="stylesheet" href="glossary.css" />
+  <style>
+    :root {
+      --paper: #f6f4ee;
+      --ink: #202124;
+      --muted: #62665d;
+      --line: #d7d1c3;
+      --white: #ffffff;
+      --teal: #0f766e;
+      --blue: #315caa;
+      --amber: #b86f14;
+      --rose: #a83e51;
+      --green: #2f7d4f;
+      --soft-blue: #e7edf9;
+      --soft-amber: #f5e5cf;
+      --soft-green: #e3f0e8;
+      --soft-rose: #f6e2e7;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      color: var(--ink);
+      background: var(--paper);
+      font-family: "Microsoft YaHei", "PingFang SC", "Segoe UI", sans-serif;
+    }
+
+    header,
+    main {
+      width: min(1180px, calc(100% - 32px));
+      margin: 0 auto;
+    }
+
+    header { padding: 24px 0 18px; }
+
+    .nav,
+    .tabs,
+    .actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+
+    .nav { margin-bottom: 18px; }
+
+    a,
+    button {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 9px 12px;
+      color: var(--ink);
+      background: var(--white);
+      font: inherit;
+      font-weight: 700;
+      text-decoration: none;
+      cursor: pointer;
+    }
+
+    button.active,
+    button.primary {
+      color: var(--white);
+      border-color: var(--teal);
+      background: var(--teal);
+    }
+
+    h1 {
+      margin: 0 0 10px;
+      font-size: clamp(28px, 4vw, 46px);
+      line-height: 1.12;
+      letter-spacing: 0;
+    }
+
+    h2,
+    h3 {
+      margin: 0;
+      letter-spacing: 0;
+    }
+
+    p {
+      margin: 0;
+      color: var(--muted);
+      line-height: 1.75;
+    }
+
+    main {
+      display: grid;
+      gap: 16px;
+      padding-bottom: 36px;
+    }
+
+    .section {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      overflow: hidden;
+      background: var(--white);
+    }
+
+    .section-head {
+      padding: 14px 16px;
+      border-bottom: 1px solid var(--line);
+      background: #fbfaf5;
+    }
+
+    .section-body { padding: 16px; }
+
+    .flow {
+      display: grid;
+      grid-template-columns: repeat(8, minmax(142px, 1fr));
+      gap: 10px;
+      overflow-x: auto;
+      padding-bottom: 4px;
+    }
+
+    .step-card {
+      min-height: 150px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 12px;
+      background: #fffdf8;
+      line-height: 1.68;
+    }
+
+    .step-card:nth-child(1),
+    .step-card:nth-child(5) { background: var(--soft-blue); }
+    .step-card:nth-child(2),
+    .step-card:nth-child(6) { background: var(--soft-amber); }
+    .step-card:nth-child(3),
+    .step-card:nth-child(7) { background: var(--soft-green); }
+    .step-card:nth-child(4),
+    .step-card:nth-child(8) { background: var(--soft-rose); }
+
+    .step-card strong {
+      display: block;
+      margin-bottom: 6px;
+      color: var(--ink);
+    }
+
+    .two {
+      display: grid;
+      grid-template-columns: minmax(0, 0.9fr) minmax(360px, 1.1fr);
+      gap: 16px;
+      align-items: start;
+    }
+
+    .stage-panel {
+      display: grid;
+      gap: 12px;
+    }
+
+    .stage-card {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 14px;
+      background: #fffdf8;
+    }
+
+    .stage-card h3 {
+      margin-bottom: 8px;
+      color: var(--teal);
+    }
+
+    .code {
+      margin: 0;
+      border-radius: 8px;
+      padding: 14px;
+      min-height: 420px;
+      color: #f7f7f2;
+      background: #202124;
+      font-family: Consolas, "Courier New", monospace;
+      font-size: 14px;
+      line-height: 1.7;
+      white-space: pre;
+      overflow: auto;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+
+    th,
+    td {
+      border-bottom: 1px solid var(--line);
+      padding: 12px;
+      text-align: left;
+      vertical-align: top;
+      line-height: 1.65;
+    }
+
+    th {
+      background: #fbfaf5;
+      font-size: 14px;
+    }
+
+    tr:last-child td { border-bottom: 0; }
+
+    .tag {
+      display: inline-block;
+      border-radius: 6px;
+      padding: 3px 7px;
+      color: var(--white);
+      background: var(--teal);
+      font-size: 13px;
+      font-weight: 900;
+    }
+
+    .note-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 12px;
+    }
+
+    .note {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 13px;
+      background: #fffdf8;
+      line-height: 1.72;
+    }
+
+    .note strong {
+      display: block;
+      margin-bottom: 6px;
+    }
+
+    @media (max-width: 980px) {
+      .two,
+      .note-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .flow {
+        grid-template-columns: repeat(8, 210px);
+      }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <nav class="nav" aria-label="页面导航">
+      <a href="README.md">主题说明</a>
+      <a href="scenario.html">项目场景</a>
+      <a href="nonlinearity.html">非线性</a>
+      <a href="slides.html">PPT 讲义</a>
+      <a href="demo-web/index.html">自动求导演示</a>
+      <a href="logic-map.html">逻辑图</a>
+      <a href="demo-project/mini_autograd.py">源码</a>
+    </nav>
+    <h1>PyTorch 完整训练流水线</h1>
+    <p>这一页把聊天里提到但页面里还没展示的主线补齐：数据怎么进来、训练和验证怎么切、什么时候保存模型、预测时为什么不用梯度。</p>
+  </header>
+
+  <main>
+    <section class="section">
+      <div class="section-head">
+        <h2>整条工程主线</h2>
+      </div>
+      <div class="section-body">
+        <div class="flow" aria-label="PyTorch 训练流水线">
+          <article class="step-card">
+            <strong>1 Dataset</strong>
+            <p>读原始表格，把字段整理成 feature 和 target。</p>
+          </article>
+          <article class="step-card">
+            <strong>2 DataLoader</strong>
+            <p>把样本按 batch 喂给训练循环。</p>
+          </article>
+          <article class="step-card">
+            <strong>3 model.train</strong>
+            <p>打开训练模式，让 Dropout 等训练行为生效。</p>
+          </article>
+          <article class="step-card">
+            <strong>4 train loop</strong>
+            <p>zero_grad、forward、loss、backward、step。</p>
+          </article>
+          <article class="step-card">
+            <strong>5 model.eval</strong>
+            <p>切到验证模式，让评估结果稳定。</p>
+          </article>
+          <article class="step-card">
+            <strong>6 no_grad</strong>
+            <p>验证和预测不建梯度图，省内存也避免误更新。</p>
+          </article>
+          <article class="step-card">
+            <strong>7 save best</strong>
+            <p>验证集变好才保存 state_dict。</p>
+          </article>
+          <article class="step-card">
+            <strong>8 predict</strong>
+            <p>加载模型，用新数据输出 prediction。</p>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="section-head">
+        <h2>互动代码讲解</h2>
+      </div>
+      <div class="section-body two">
+        <div class="stage-panel">
+          <div class="tabs" aria-label="训练流水线阶段">
+            <button class="active" type="button" data-stage="data">数据入口</button>
+            <button type="button" data-stage="train">训练循环</button>
+            <button type="button" data-stage="eval">验证循环</button>
+            <button type="button" data-stage="save">保存预测</button>
+          </div>
+
+          <article class="stage-card">
+            <h3 id="stageTitle">数据入口</h3>
+            <p id="stageText"></p>
+          </article>
+
+          <div class="note-grid">
+            <article class="note">
+              <strong>loop 前</strong>
+              <p>Dataset、DataLoader、model、loss_fn、optimizer 都要先准备好。</p>
+            </article>
+            <article class="note">
+              <strong>loop 内</strong>
+              <p>真正反复发生的是 batch 训练：forward、loss、backward、step。</p>
+            </article>
+            <article class="note">
+              <strong>loop 后</strong>
+              <p>用验证集挑模型，保存 state_dict，再给预测脚本加载。</p>
+            </article>
+          </div>
+        </div>
+
+        <pre class="code" id="codeBlock"></pre>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="section-head">
+        <h2>输出和 loss 怎么配</h2>
+      </div>
+      <div class="section-body">
+        <table>
+          <thead>
+            <tr>
+              <th>任务</th>
+              <th>模型最后输出</th>
+              <th>常用 loss</th>
+              <th>人话解释</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><span class="tag">回归</span></td>
+              <td>一个连续数值，比如预测耗时。</td>
+              <td>MSELoss / HuberLoss</td>
+              <td>prediction 和 target 都是数值，loss 衡量差多远。</td>
+            </tr>
+            <tr>
+              <td><span class="tag">二分类</span></td>
+              <td>一个 logit，表示风险原始分数。</td>
+              <td>BCEWithLogitsLoss</td>
+              <td>不要先手动 sigmoid，loss 内部会处理得更稳定。</td>
+            </tr>
+            <tr>
+              <td><span class="tag">多分类</span></td>
+              <td>多个 logits，每个类别一个原始分数。</td>
+              <td>CrossEntropyLoss</td>
+              <td>不要先手动 softmax，CrossEntropyLoss 内部会处理。</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="section-head">
+        <h2>哪些东西在核心 loop 外面</h2>
+      </div>
+      <div class="section-body">
+        <table>
+          <thead>
+            <tr>
+              <th>模块</th>
+              <th>位置</th>
+              <th>作用</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Dataset / DataLoader</td>
+              <td>loop 前准备，loop 内提供 batch</td>
+              <td>把原始数据变成一批一批的 tensor。</td>
+            </tr>
+            <tr>
+              <td>train / eval 模式</td>
+              <td>训练 loop 前、验证 loop 前切换</td>
+              <td>控制 Dropout、BatchNorm 这类层在训练和验证时行为不同。</td>
+            </tr>
+            <tr>
+              <td>no_grad</td>
+              <td>验证和预测 loop 外层</td>
+              <td>告诉 PyTorch 不用记录计算图，不需要 backward。</td>
+            </tr>
+            <tr>
+              <td>scheduler</td>
+              <td>通常在 epoch 后或 step 后</td>
+              <td>动态调整学习率，让训练前期快、后期细。</td>
+            </tr>
+            <tr>
+              <td>early stopping</td>
+              <td>每轮验证后判断</td>
+              <td>验证集不再变好就停，避免继续背训练集噪音。</td>
+            </tr>
+            <tr>
+              <td>state_dict</td>
+              <td>验证集变好时保存</td>
+              <td>保存模型参数，不保存整段训练过程。</td>
+            </tr>
+            <tr>
+              <td>device</td>
+              <td>数据和模型进入 loop 前</td>
+              <td>确保模型和 tensor 都在 CPU 或同一块 GPU 上。</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+  </main>
+
+  <script src="glossary.js"></script>
+  <script>
+    const stages = {
+      data: {
+        title: "数据入口：Dataset 和 DataLoader",
+        text: "真实项目里不要把 features 写死在脚本里。Dataset 负责把原始数据变成单条样本，DataLoader 负责把多条样本组成 batch。",
+        code: `from torch.utils.data import Dataset, DataLoader
+
+class OrderDataset(Dataset):
+    def __init__(self, rows):
+        self.rows = rows
+
+    def __len__(self):
+        return len(self.rows)
+
+    def __getitem__(self, index):
+        row = self.rows[index]
+
+        features = torch.tensor([
+            row["item_count"],
+            row["stock"],
+            row["warehouse_load"],
+        ], dtype=torch.float32)
+
+        target = torch.tensor([row["delay_minutes"]], dtype=torch.float32)
+        return features, target
+
+train_loader = DataLoader(
+    OrderDataset(train_rows),
+    batch_size=32,
+    shuffle=True,
+)`
+      },
+      train: {
+        title: "训练循环：真正更新参数的地方",
+        text: "训练 loop 里路线很固定：清旧梯度、forward、算 loss、backward 写 grad、optimizer.step 更新参数。",
+        code: `model.train()
+
+for features, targets in train_loader:
+    features = features.to(device)
+    targets = targets.to(device)
+
+    optimizer.zero_grad()
+
+    predictions = model(features)
+    loss = loss_fn(predictions, targets)
+
+    loss.backward()
+    optimizer.step()
+
+    # 如果用了 scheduler，也可能在这里或 epoch 后调用
+    # scheduler.step()`
+      },
+      eval: {
+        title: "验证循环：只看效果，不更新参数",
+        text: "验证集不是用来训练参数的。model.eval() 让模型切到评估模式，torch.no_grad() 让 PyTorch 不记录计算图。",
+        code: `model.eval()
+total_loss = 0.0
+
+with torch.no_grad():
+    for features, targets in val_loader:
+        features = features.to(device)
+        targets = targets.to(device)
+
+        predictions = model(features)
+        loss = loss_fn(predictions, targets)
+
+        total_loss += loss.item()
+
+val_loss = total_loss / len(val_loader)`
+      },
+      save: {
+        title: "保存和预测：保存参数，不保存聊天记录",
+        text: "常见做法是验证集变好时保存 state_dict。预测时重新创建同结构模型，再加载这份参数。",
+        code: `if val_loss < best_val_loss:
+    best_val_loss = val_loss
+    torch.save(model.state_dict(), "best_model.pt")
+
+# 预测脚本里
+model = OrderDelayModel()
+model.load_state_dict(torch.load("best_model.pt"))
+model.to(device)
+model.eval()
+
+with torch.no_grad():
+    prediction = model(new_features.to(device))`
+      }
+    };
+
+    const buttons = Array.from(document.querySelectorAll("[data-stage]"));
+    const title = document.querySelector("#stageTitle");
+    const text = document.querySelector("#stageText");
+    const code = document.querySelector("#codeBlock");
+
+    function render(stageName) {
+      const stage = stages[stageName];
+      title.textContent = stage.title;
+      text.textContent = stage.text;
+      code.textContent = stage.code;
+
+      buttons.forEach((button) => {
+        button.classList.toggle("active", button.dataset.stage === stageName);
+      });
+
+      if (window.LLMLabGlossary) {
+        window.LLMLabGlossary.apply(document.body);
+      }
+    }
+
+    buttons.forEach((button) => {
+      button.addEventListener("click", () => render(button.dataset.stage));
+    });
+
+    render("data");
+  </script>
+</body>
+</html>

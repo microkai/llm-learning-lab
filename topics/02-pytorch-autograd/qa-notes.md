@@ -400,6 +400,21 @@ Dataset / DataLoader：读数据、清洗、转 tensor、组 batch。
 分布式训练：多 GPU 同步参数、分发 batch、合并梯度。
 ```
 
+这些内容已经补成展示页：
+
+```text
+training-pipeline.html
+```
+
+学习顺序建议：
+
+```text
+先看 Dataset / DataLoader 如何提供 batch
+再看 train loop 如何更新参数
+再看 validation loop 为什么不更新参数
+最后看 state_dict 如何保存和加载模型
+```
+
 ## 这一段的总总结
 
 ```text

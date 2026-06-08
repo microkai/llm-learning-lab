@@ -67,6 +67,9 @@
 5. [logic-map.html](logic-map.html)
    代码逻辑图，把“前向计算、记录计算图、反向传播、参数更新”对应到 `mini_autograd.py` 的关键行号，并给术语做即时解释。
 
+6. [training-pipeline.html](training-pipeline.html)
+   完整训练工程主线：Dataset、DataLoader、train/eval、no_grad、验证循环、保存模型、预测入口。
+
 这些都是静态 HTML，直接在浏览器打开就行，不需要启动服务。
 
 ## 这一节要学会什么
@@ -93,6 +96,7 @@
 - [nonlinearity.html](nonlinearity.html)：非线性专题，用业务类比解释 Linear + ReLU。
 - [demo-web/index.html](demo-web/index.html)：互动网页，看计算图、梯度和一步更新。
 - [logic-map.html](logic-map.html)：从框架流程跳到代码行号。
+- [training-pipeline.html](training-pipeline.html)：完整训练流水线，把真实项目的训练工程补齐。
 - [qa-notes.md](qa-notes.md)：追问沉淀笔记，集中记录本节容易卡住的理解点。
 - [demo-project/mini_autograd.py](demo-project/mini_autograd.py)：纯 Python 自动求导 demo。
 - [demo-project/pytorch_xor_optional.py](demo-project/pytorch_xor_optional.py)：可选 PyTorch 版本。

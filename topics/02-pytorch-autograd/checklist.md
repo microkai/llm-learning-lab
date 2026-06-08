@@ -8,6 +8,8 @@
 - [ ] 我能解释 `optimizer.step()` 才是真正更新参数。
 - [ ] 我能解释为什么每轮训练前要 `zero_grad()`。
 - [ ] 我能用“直线和开关”的类比解释 Linear + ReLU 为什么带来非线性。
+- [ ] 我能说出 Dataset、DataLoader、train loop、validation loop 分别在训练流水线里的位置。
+- [ ] 我能解释 `model.train()`、`model.eval()` 和 `torch.no_grad()` 为什么不属于参数更新公式，但真实项目必须用。
 - [ ] 我能说出 PyTorch 帮我们省掉了上一节哪部分手写代码。
 
 ## 代码
@@ -25,4 +27,5 @@
 - [ ] 我改过训练轮数。
 - [ ] 我打开过 `demo-web/index.html`。
 - [ ] 我打开过 `nonlinearity.html`，并切换过 Linear、Linear + ReLU。
+- [ ] 我打开过 `training-pipeline.html`，并切换过数据入口、训练循环、验证循环、保存预测。
 - [ ] 我打开过 `logic-map.html` 并顺着行号看过代码。
