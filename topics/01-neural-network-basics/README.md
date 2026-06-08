@@ -65,6 +65,7 @@
 ## 文件入口
 
 - [slides.html](slides.html)：PPT 式图文讲义。
+- [quiz.html](quiz.html)：神经网络算法互动练习题，含出题原则和来源参考。
 - [demo-web/index.html](demo-web/index.html)：互动网页，拖动输入和权重看输出变化。
 - [demo-web/directional-derivative.html](demo-web/directional-derivative.html)：方向导数可视化，看 `v`、梯度、负梯度和 loss 变化。
 - [code-flow.html](code-flow.html)：代码业务流程图，区分训练阶段和预测阶段的前向传播。

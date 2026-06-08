@@ -1,0 +1,1119 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>神经网络算法练习题</title>
+  <style>
+    :root {
+      --paper: #f6f4ee;
+      --ink: #202124;
+      --muted: #62665d;
+      --line: #d7d1c3;
+      --white: #ffffff;
+      --teal: #0f766e;
+      --blue: #315caa;
+      --amber: #b86f14;
+      --rose: #a83e51;
+      --green: #2f7d4f;
+      --soft-blue: #e7edf9;
+      --soft-amber: #f5e5cf;
+      --soft-green: #e3f0e8;
+      --soft-rose: #f6e2e7;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      color: var(--ink);
+      background: var(--paper);
+      font-family: "Microsoft YaHei", "PingFang SC", "Segoe UI", sans-serif;
+    }
+
+    header,
+    main {
+      width: min(1180px, calc(100% - 32px));
+      margin: 0 auto;
+    }
+
+    header {
+      padding: 24px 0 18px;
+    }
+
+    .nav {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-bottom: 18px;
+    }
+
+    a,
+    button {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 9px 12px;
+      color: var(--ink);
+      background: var(--white);
+      font: inherit;
+      font-weight: 700;
+      text-decoration: none;
+      cursor: pointer;
+    }
+
+    button.primary,
+    button.active {
+      color: var(--white);
+      border-color: var(--teal);
+      background: var(--teal);
+    }
+
+    button:disabled {
+      cursor: not-allowed;
+      opacity: 0.55;
+    }
+
+    h1 {
+      margin: 0 0 10px;
+      font-size: clamp(28px, 4vw, 44px);
+      line-height: 1.12;
+      letter-spacing: 0;
+    }
+
+    h2,
+    h3 {
+      margin: 0;
+      letter-spacing: 0;
+    }
+
+    p {
+      margin: 0;
+      color: var(--muted);
+      line-height: 1.75;
+    }
+
+    main {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 340px;
+      gap: 16px;
+      padding-bottom: 36px;
+    }
+
+    .panel {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      overflow: hidden;
+      background: var(--white);
+    }
+
+    .panel-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 14px 16px;
+      border-bottom: 1px solid var(--line);
+      background: #fbfaf5;
+    }
+
+    .panel-body {
+      padding: 16px;
+    }
+
+    .tabs,
+    .filters {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .filters {
+      margin-bottom: 14px;
+    }
+
+    .question-card {
+      display: grid;
+      gap: 16px;
+      min-height: 500px;
+    }
+
+    .meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .tag {
+      border-radius: 999px;
+      padding: 4px 9px;
+      font-size: 12px;
+      font-weight: 800;
+      color: var(--teal);
+      background: #e5f2ef;
+    }
+
+    .tag.level {
+      color: var(--amber);
+      background: #f8ead8;
+    }
+
+    .stem {
+      border-radius: 8px;
+      padding: 16px;
+      background: #fffdf8;
+      border: 1px solid var(--line);
+    }
+
+    .stem h2 {
+      margin-bottom: 10px;
+      font-size: clamp(20px, 2.5vw, 28px);
+    }
+
+    .visual {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 8px;
+      align-items: stretch;
+      margin-top: 14px;
+    }
+
+    .flow-box {
+      display: grid;
+      place-items: center;
+      min-height: 72px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 8px;
+      text-align: center;
+      line-height: 1.45;
+      background: var(--soft-blue);
+      font-weight: 800;
+    }
+
+    .flow-box:nth-child(2) { background: var(--soft-amber); }
+    .flow-box:nth-child(3) { background: var(--soft-rose); }
+    .flow-box:nth-child(4) { background: var(--soft-green); }
+    .flow-box:nth-child(5) { background: #f0eee5; }
+
+    .options {
+      display: grid;
+      gap: 10px;
+    }
+
+    .option {
+      display: grid;
+      grid-template-columns: 34px 1fr;
+      gap: 10px;
+      align-items: center;
+      width: 100%;
+      min-height: 58px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 10px;
+      text-align: left;
+      background: var(--white);
+    }
+
+    .option:hover {
+      border-color: var(--teal);
+    }
+
+    .option.selected {
+      border-color: var(--blue);
+      background: var(--soft-blue);
+    }
+
+    .option.correct {
+      border-color: var(--green);
+      background: var(--soft-green);
+    }
+
+    .option.wrong {
+      border-color: var(--rose);
+      background: var(--soft-rose);
+    }
+
+    .letter {
+      display: grid;
+      place-items: center;
+      width: 28px;
+      aspect-ratio: 1;
+      border-radius: 50%;
+      color: var(--white);
+      background: var(--blue);
+      font-weight: 900;
+    }
+
+    .answer-input {
+      display: grid;
+      gap: 10px;
+    }
+
+    input[type="text"] {
+      width: 100%;
+      min-height: 46px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 10px 12px;
+      font: inherit;
+      background: var(--white);
+    }
+
+    .actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+
+    .feedback {
+      display: none;
+      border-radius: 8px;
+      padding: 14px;
+      line-height: 1.75;
+      background: var(--soft-green);
+      border: 1px solid #bad9c4;
+    }
+
+    .feedback.show {
+      display: block;
+    }
+
+    .feedback.wrong {
+      background: var(--soft-rose);
+      border-color: #e1b7bf;
+    }
+
+    .feedback strong {
+      display: block;
+      margin-bottom: 4px;
+      color: var(--ink);
+    }
+
+    .side {
+      display: grid;
+      gap: 16px;
+      align-content: start;
+    }
+
+    .score {
+      display: grid;
+      gap: 10px;
+    }
+
+    .score-number {
+      font-size: 44px;
+      line-height: 1;
+      font-weight: 900;
+      color: var(--teal);
+    }
+
+    .bar {
+      height: 12px;
+      border-radius: 999px;
+      overflow: hidden;
+      background: #ece8df;
+    }
+
+    .bar-fill {
+      height: 100%;
+      width: 0%;
+      background: linear-gradient(90deg, var(--teal), var(--blue));
+      transition: width 160ms ease;
+    }
+
+    .principles,
+    .sources,
+    .wrong-list {
+      display: grid;
+      gap: 10px;
+      line-height: 1.7;
+    }
+
+    .principle {
+      border-radius: 8px;
+      padding: 12px;
+      background: #fffdf8;
+      border: 1px solid var(--line);
+    }
+
+    .principle strong {
+      display: block;
+      margin-bottom: 4px;
+    }
+
+    .source-link,
+    .wrong-item {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 10px;
+      background: #fffdf8;
+      color: var(--ink);
+      font-weight: 700;
+    }
+
+    .hidden {
+      display: none;
+    }
+
+    .calc {
+      display: grid;
+      gap: 10px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 12px;
+      background: #fffdf8;
+    }
+
+    .calc-row {
+      display: grid;
+      grid-template-columns: 84px 1fr 46px;
+      gap: 8px;
+      align-items: center;
+    }
+
+    input[type="range"] {
+      width: 100%;
+      accent-color: var(--teal);
+    }
+
+    @media (max-width: 940px) {
+      main {
+        grid-template-columns: 1fr;
+      }
+
+      .visual {
+        grid-template-columns: 1fr;
+      }
+
+      .panel-head {
+        display: grid;
+      }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <nav class="nav" aria-label="页面导航">
+      <a href="README.md">主题说明</a>
+      <a href="code-flow.html">代码流程</a>
+      <a href="logic-map.html">逻辑图</a>
+      <a href="demo-web/index.html">互动网页</a>
+      <a href="demo-project/mlp_from_scratch.py">源码</a>
+    </nav>
+    <h1>神经网络算法练习题</h1>
+    <p>题目参考了公开课程和学习科学资料，但都按本项目的异或 demo 重新改写。目标是练“流程感”和“参数怎么学”，不是背定义。</p>
+  </header>
+
+  <main>
+    <section class="panel">
+      <div class="panel-head">
+        <h2 id="panelTitle">练习模式</h2>
+        <div class="tabs">
+          <button class="active" data-view="quiz">做题</button>
+          <button data-view="principles">出题原则</button>
+          <button data-view="sources">来源参考</button>
+        </div>
+      </div>
+
+      <div class="panel-body" id="quizView">
+        <div class="filters" aria-label="题目筛选">
+          <button class="active" data-filter="all">全部</button>
+          <button data-filter="流程">流程</button>
+          <button data-filter="梯度">梯度</button>
+          <button data-filter="结构">结构</button>
+          <button data-filter="评估">评估</button>
+        </div>
+
+        <article class="question-card">
+          <div class="meta" id="questionMeta"></div>
+          <div class="stem">
+            <h2 id="questionTitle"></h2>
+            <p id="questionStem"></p>
+            <div class="visual" id="questionVisual"></div>
+          </div>
+
+          <div class="options" id="options"></div>
+          <div class="answer-input hidden" id="answerInputWrap">
+            <input id="answerInput" type="text" autocomplete="off" />
+          </div>
+
+          <div class="actions">
+            <button class="primary" id="submitAnswer">提交答案</button>
+            <button id="showHint">提示</button>
+            <button id="prevQuestion">上一题</button>
+            <button id="nextQuestion">下一题</button>
+            <button id="shuffleQuestions">打乱题目</button>
+          </div>
+
+          <div class="feedback" id="feedback"></div>
+        </article>
+      </div>
+
+      <div class="panel-body hidden" id="principlesView">
+        <div class="principles">
+          <article class="principle">
+            <strong>1. 先流程，后名词</strong>
+            <span>第一组题先问训练顺序、前向传播和预测阶段，避免一上来陷进公式。</span>
+          </article>
+          <article class="principle">
+            <strong>2. 每个概念都问“分工”</strong>
+            <span>反向传播、梯度下降、损失函数、阈值这些词容易混，所以题目会让你区分谁负责答题、谁负责算责任、谁负责改参数。</span>
+          </article>
+          <article class="principle">
+            <strong>3. 小计算只服务直觉</strong>
+            <span>参数量、loss、梯度方向这些题只用低维数字，让你看清结构，不把练习变成纯算术。</span>
+          </article>
+          <article class="principle">
+            <strong>4. 题目必须有即时反馈</strong>
+            <span>每题提交后直接给解释，错题会进入复盘列表。这样做是为了让题目成为学习过程，而不是单纯打分。</span>
+          </article>
+          <article class="principle">
+            <strong>5. 混合题型</strong>
+            <span>选择题负责快速辨析，填空题负责主动回忆，计算题负责把公式落到变量上。</span>
+          </article>
+          <article class="principle">
+            <strong>6. 从本项目代码出发</strong>
+            <span>所有题都能对应到 `mlp_from_scratch.py` 的流程，避免学完题却看不回代码。</span>
+          </article>
+        </div>
+      </div>
+
+      <div class="panel-body hidden" id="sourcesView">
+        <div class="sources">
+          <a class="source-link" href="https://cs231n.github.io/neural-networks-3/">CS231n：训练过程、学习率、训练/验证表现、参数更新</a>
+          <a class="source-link" href="https://cs231n.github.io/optimization-2/">CS231n：反向传播、计算图、链式法则</a>
+          <a class="source-link" href="https://introml.mit.edu/notes/neural_networks.html">MIT 6.390：神经元公式、层、激活函数、反向传播流程</a>
+          <a class="source-link" href="https://www.cmu.edu/teaching/resources/instructionalstrategies/activelearningstrategies/retrievalpractice/index.html">CMU Eberly Center：检索练习、低风险测验、反馈</a>
+        </div>
+      </div>
+    </section>
+
+    <aside class="side">
+      <section class="panel">
+        <div class="panel-head">
+          <h2>进度</h2>
+        </div>
+        <div class="panel-body score">
+          <div class="score-number" id="scoreNumber">0/0</div>
+          <div class="bar"><div class="bar-fill" id="barFill"></div></div>
+          <p id="scoreText">做完题后这里会显示正确率。</p>
+          <button id="resetProgress">重置进度</button>
+        </div>
+      </section>
+
+      <section class="panel">
+        <div class="panel-head">
+          <h2>参数量小算盘</h2>
+        </div>
+        <div class="panel-body calc">
+          <div class="calc-row">
+            <label for="calcInput">输入</label>
+            <input id="calcInput" type="range" min="1" max="8" value="2" />
+            <span id="calcInputValue">2</span>
+          </div>
+          <div class="calc-row">
+            <label for="calcHidden">隐藏</label>
+            <input id="calcHidden" type="range" min="1" max="12" value="4" />
+            <span id="calcHiddenValue">4</span>
+          </div>
+          <div class="calc-row">
+            <label for="calcOutput">输出</label>
+            <input id="calcOutput" type="range" min="1" max="6" value="1" />
+            <span id="calcOutputValue">1</span>
+          </div>
+          <p id="calcResult"></p>
+        </div>
+      </section>
+
+      <section class="panel">
+        <div class="panel-head">
+          <h2>错题复盘</h2>
+        </div>
+        <div class="panel-body wrong-list" id="wrongList">
+          <p>还没有错题。</p>
+        </div>
+      </section>
+    </aside>
+  </main>
+
+  <script>
+    const questions = [
+      {
+        id: "flow-1",
+        category: "流程",
+        level: "入门",
+        type: "choice",
+        title: "训练一条样本的正确顺序",
+        stem: "在这个 demo 里，一条样本从进入训练到更新参数，最合理的顺序是哪一个？",
+        visual: ["输入样本", "前向传播", "计算损失", "反向传播", "梯度下降"],
+        options: [
+          "前向传播 -> 计算损失 -> 反向传播 -> 梯度下降",
+          "梯度下降 -> 前向传播 -> 计算损失 -> 反向传播",
+          "反向传播 -> 前向传播 -> 梯度下降 -> 计算损失",
+          "计算损失 -> 梯度下降 -> 前向传播 -> 反向传播"
+        ],
+        correct: 0,
+        hint: "先答题，才知道错多少；知道错多少，才能算责任；算完责任，才改参数。",
+        explanation: "训练流程是：用当前参数先算预测，再用预测和答案算 loss，然后反向算梯度，最后用梯度下降改参数。",
+        source: "CS231n / MIT 6.390"
+      },
+      {
+        id: "flow-2",
+        category: "流程",
+        level: "入门",
+        type: "choice",
+        title: "训练完为什么还要 forward",
+        stem: "训练结束后，`predict()` 内部还会调用 `forward()`。这说明什么？",
+        options: [
+          "预测阶段也要用当前参数答题，但不算 loss、不改参数",
+          "训练没有结束，模型还在继续反向传播",
+          "forward 只负责更新权重",
+          "predict 会重新随机初始化参数"
+        ],
+        correct: 0,
+        hint: "训练阶段和预测阶段都会答题；区别在于预测阶段不学习。",
+        explanation: "`forward()` 是通用答题函数。训练时 forward 后还要算 loss 和更新参数；预测时只取 prediction。",
+        source: "MIT 6.390"
+      },
+      {
+        id: "neuron-1",
+        category: "结构",
+        level: "入门",
+        type: "choice",
+        title: "神经元像什么",
+        stem: "用高中函数来类比，一个神经元最像下面哪一个？",
+        options: [
+          "activation(w1*x1 + w2*x2 + b)",
+          "x1 + x2，不带任何参数",
+          "只会输出 0 或 1 的固定规则",
+          "一个不依赖输入的随机数"
+        ],
+        correct: 0,
+        hint: "权重像系数，偏置像常数项，激活函数再套一层。",
+        explanation: "神经元先做加权求和，再加偏置，最后经过激活函数。没有激活函数，多层线性组合仍然只是线性函数。",
+        source: "MIT 6.390"
+      },
+      {
+        id: "structure-1",
+        category: "结构",
+        level: "入门",
+        type: "choice",
+        title: "隐藏层为什么叫隐藏层",
+        stem: "隐藏层的“隐藏”最准确指什么？",
+        options: [
+          "它夹在输入和输出之间，是模型内部自己学出的中间表示",
+          "它的代码不能被人看到",
+          "它的参数不会参与训练",
+          "它只在训练后才出现"
+        ],
+        correct: 0,
+        hint: "输入和输出我们直接看得到，中间表示通常不直接由人规定。",
+        explanation: "隐藏层不是原始输入，也不是最终答案。它的每个神经元可能学到某种中间特征，但这个含义不一定能直接翻译成人话。",
+        source: "MIT 6.390"
+      },
+      {
+        id: "activation-1",
+        category: "结构",
+        level: "进阶",
+        type: "choice",
+        title: "为什么需要非线性激活",
+        stem: "如果一个多层网络每层都只是线性变换，没有非线性激活，会怎样？",
+        options: [
+          "多层线性变换合起来仍然等价于一层线性变换",
+          "模型会自动变成 Transformer",
+          "反向传播无法计算任何梯度",
+          "参数量会变成 0"
+        ],
+        correct: 0,
+        hint: "线性函数套线性函数，结果还是线性函数。",
+        explanation: "非线性激活让网络能表达弯曲、分段、组合的关系。MIT 6.390 的说明里也强调，纯线性多层不会增加表达能力。",
+        source: "MIT 6.390"
+      },
+      {
+        id: "loss-1",
+        category: "梯度",
+        level: "入门",
+        type: "choice",
+        title: "error 和 loss 的分工",
+        stem: "在 `error = prediction - target` 和 `loss = 0.5 * error * error` 里，哪个说法更准确？",
+        options: [
+          "error 有方向，loss 衡量错得多不多",
+          "loss 有正负号，error 永远非负",
+          "error 和 loss 完全一样",
+          "loss 只在预测阶段使用"
+        ],
+        correct: 0,
+        hint: "平方会把正负号去掉。",
+        explanation: "`error` 能表示预测偏高还是偏低；`loss` 把错误程度变成非负数字，方便优化。",
+        source: "本项目 demo"
+      },
+      {
+        id: "loss-2",
+        category: "梯度",
+        level: "计算",
+        type: "text",
+        title: "计算一个简单 loss",
+        stem: "如果 prediction = 0.8，target = 1.0，按 `0.5 * error * error` 计算 loss，结果是多少？",
+        answer: ["0.02", ".02"],
+        placeholder: "输入数字，例如 0.02",
+        hint: "error = 0.8 - 1.0 = -0.2；平方后是 0.04。",
+        explanation: "loss = 0.5 * (-0.2)² = 0.5 * 0.04 = 0.02。",
+        source: "本项目 demo"
+      },
+      {
+        id: "grad-1",
+        category: "梯度",
+        level: "入门",
+        type: "choice",
+        title: "反向传播和梯度下降",
+        stem: "哪句话最准确？",
+        options: [
+          "反向传播算梯度，梯度下降用梯度改参数",
+          "反向传播直接把输入变成输出",
+          "梯度下降负责计算 prediction",
+          "反向传播只在预测阶段使用"
+        ],
+        correct: 0,
+        hint: "一个算责任，一个动手改。",
+        explanation: "反向传播沿计算链路把 loss 对各参数的梯度算出来；梯度下降执行 `参数 -= 学习率 * 梯度`。",
+        source: "CS231n / MIT 6.390"
+      },
+      {
+        id: "grad-2",
+        category: "梯度",
+        level: "入门",
+        type: "choice",
+        title: "更新公式里的减号",
+        stem: "`参数 = 参数 - 学习率 * 梯度` 里的减号是什么意思？",
+        options: [
+          "梯度指向 loss 增加方向，所以要反着走",
+          "减号是为了让参数永远变小",
+          "减号表示删除这个参数",
+          "减号只对 sigmoid 有效"
+        ],
+        correct: 0,
+        hint: "梯度是上坡最快方向，训练要下坡。",
+        explanation: "梯度方向是 loss 上升最快方向。我们想最小化 loss，所以沿负梯度方向更新。",
+        source: "CS231n"
+      },
+      {
+        id: "grad-3",
+        category: "梯度",
+        level: "计算",
+        type: "text",
+        title: "一步参数更新",
+        stem: "如果参数 w = 2.0，gradient = 3.0，learning_rate = 0.1，更新后的 w 是多少？",
+        answer: ["1.7", "1.70"],
+        placeholder: "输入数字，例如 1.7",
+        hint: "w_new = 2.0 - 0.1 * 3.0。",
+        explanation: "w_new = 2.0 - 0.3 = 1.7。梯度为正，说明增大 w 会让 loss 增大，所以这一步把 w 减小。",
+        source: "CS231n"
+      },
+      {
+        id: "param-1",
+        category: "结构",
+        level: "计算",
+        type: "text",
+        title: "2-4-1 网络有几个参数",
+        stem: "这个 demo 是 2 个输入、4 个隐藏神经元、1 个输出。包含权重和偏置，总参数量是多少？",
+        answer: ["17"],
+        placeholder: "输入整数",
+        hint: "输入到隐藏层权重 2*4，隐藏偏置 4，隐藏到输出权重 4*1，输出偏置 1。",
+        explanation: "总参数 = 2*4 + 4 + 4*1 + 1 = 17。",
+        source: "MIT 6.390 / 本项目 demo"
+      },
+      {
+        id: "init-1",
+        category: "结构",
+        level: "入门",
+        type: "choice",
+        title: "为什么随机初始化",
+        stem: "为什么权重通常不全部初始化成同一个值？",
+        options: [
+          "否则多个神经元容易保持对称，学成同一种东西",
+          "因为随机数可以直接替代训练",
+          "因为 loss 不能处理 0",
+          "因为偏置必须永远是负数"
+        ],
+        correct: 0,
+        hint: "如果每个神经元起点一样，它们看到的梯度也可能很像。",
+        explanation: "随机初始化能打破对称，让不同神经元从不同起点学习。MIT 6.390 也强调初始化会影响训练信号。",
+        source: "MIT 6.390"
+      },
+      {
+        id: "lr-1",
+        category: "梯度",
+        level: "入门",
+        type: "choice",
+        title: "学习率是什么",
+        stem: "学习率最像下面哪个东西？",
+        options: [
+          "沿负梯度方向走路时的步长控制器",
+          "训练数据里的正确答案",
+          "模型最终输出的类别数",
+          "隐藏层自动学出的公式"
+        ],
+        correct: 0,
+        hint: "梯度告诉方向和坡度，学习率控制敢迈多大。",
+        explanation: "学习率是人设定的超参数。太大可能冲过低点，太小会学得很慢。",
+        source: "CS231n"
+      },
+      {
+        id: "multi-1",
+        category: "评估",
+        level: "进阶",
+        type: "choice",
+        title: "多分类怎么比较答案",
+        stem: "如果输出是猫、狗、鸟、车这类没有大小关系的状态，训练时通常怎么比较预测和参考答案？",
+        options: [
+          "让模型输出每类分数或概率，再惩罚正确类别概率太低",
+          "直接计算 狗 - 猫",
+          "只看类别名字的字母顺序",
+          "不需要损失函数"
+        ],
+        correct: 0,
+        hint: "类别没有数值差值，所以比较的是分布。",
+        explanation: "多分类一般用 logits/softmax/交叉熵这条线：输出每个类别的分数，训练时推高正确类别。",
+        source: "MIT 6.390"
+      },
+      {
+        id: "eval-1",
+        category: "评估",
+        level: "入门",
+        type: "choice",
+        title: "训练集和验证集",
+        stem: "如果训练集表现很好、验证集表现很差，通常说明什么？",
+        options: [
+          "模型可能过拟合，背了训练题但泛化不好",
+          "模型一定太小，应该继续加参数",
+          "学习率一定为 0",
+          "验证集应该拿来反向传播改参数"
+        ],
+        correct: 0,
+        hint: "训练题会做，模拟考不会做。",
+        explanation: "CS231n 提到训练/验证表现的差距能反映过拟合；常见处理是更多数据、正则化、早停或降低复杂度。",
+        source: "CS231n"
+      },
+      {
+        id: "eval-2",
+        category: "评估",
+        level: "进阶",
+        type: "choice",
+        title: "loss 曲线一直乱跳",
+        stem: "训练时 loss 下降方向大体对，但每步抖动很明显。一个常见原因是什么？",
+        options: [
+          "batch 太小，梯度噪声比较大",
+          "前向传播不存在",
+          "隐藏层不参与训练",
+          "所有参数都已经最优"
+        ],
+        correct: 0,
+        hint: "每次只看少量样本，方向会更嘈杂。",
+        explanation: "CS231n 说明 batch size 越小，loss 的 wiggle 越明显；完整数据 batch 的更新更平滑，但计算更重。",
+        source: "CS231n"
+      },
+      {
+        id: "check-1",
+        category: "评估",
+        level: "进阶",
+        type: "choice",
+        title: "为什么先过拟合一个小数据集",
+        stem: "训练完整数据前，先让模型过拟合一个很小的数据子集，有什么意义？",
+        options: [
+          "检查代码和模型有没有基本学习能力",
+          "证明模型已经能泛化到所有新数据",
+          "跳过损失函数",
+          "让验证集参与训练"
+        ],
+        correct: 0,
+        hint: "小题都做不会，就别急着做整张试卷。",
+        explanation: "CS231n 建议先在很小的数据集上做 sanity check，确认模型能把小样本学到很低 loss，再训练完整数据。",
+        source: "CS231n"
+      },
+      {
+        id: "retrieval-1",
+        category: "流程",
+        level: "入门",
+        type: "choice",
+        title: "为什么题目要马上给反馈",
+        stem: "这个练习页每题提交后马上解释，主要是为了什么？",
+        options: [
+          "让做题成为学习过程，而不是只打分",
+          "让模型训练得更快",
+          "让 loss 自动下降",
+          "让隐藏层变少"
+        ],
+        correct: 0,
+        hint: "错题后马上知道错在哪里，记忆会更稳。",
+        explanation: "CMU Eberly Center 的检索练习资料强调，测验可以是学习机会；有反馈时，即使答错也能帮助学习。",
+        source: "CMU Eberly Center"
+      }
+    ];
+
+    let activeFilter = "all";
+    let order = questions.map((_, index) => index);
+    let currentPosition = 0;
+    const state = new Map();
+
+    const quizView = document.querySelector("#quizView");
+    const principlesView = document.querySelector("#principlesView");
+    const sourcesView = document.querySelector("#sourcesView");
+    const panelTitle = document.querySelector("#panelTitle");
+    const questionMeta = document.querySelector("#questionMeta");
+    const questionTitle = document.querySelector("#questionTitle");
+    const questionStem = document.querySelector("#questionStem");
+    const questionVisual = document.querySelector("#questionVisual");
+    const optionsWrap = document.querySelector("#options");
+    const answerInputWrap = document.querySelector("#answerInputWrap");
+    const answerInput = document.querySelector("#answerInput");
+    const feedback = document.querySelector("#feedback");
+    const submitButton = document.querySelector("#submitAnswer");
+    const showHintButton = document.querySelector("#showHint");
+    const prevButton = document.querySelector("#prevQuestion");
+    const nextButton = document.querySelector("#nextQuestion");
+    const shuffleButton = document.querySelector("#shuffleQuestions");
+    const scoreNumber = document.querySelector("#scoreNumber");
+    const scoreText = document.querySelector("#scoreText");
+    const barFill = document.querySelector("#barFill");
+    const resetButton = document.querySelector("#resetProgress");
+    const wrongList = document.querySelector("#wrongList");
+
+    function filteredOrder() {
+      if (activeFilter === "all") return order;
+      return order.filter((index) => questions[index].category === activeFilter);
+    }
+
+    function currentQuestion() {
+      const list = filteredOrder();
+      return questions[list[currentPosition]];
+    }
+
+    function normalizeText(value) {
+      return value.trim().toLowerCase().replace(/\s+/g, "");
+    }
+
+    function renderVisual(question) {
+      questionVisual.innerHTML = "";
+      if (!question.visual) return;
+      question.visual.forEach((item) => {
+        const box = document.createElement("div");
+        box.className = "flow-box";
+        box.textContent = item;
+        questionVisual.appendChild(box);
+      });
+    }
+
+    function renderQuestion() {
+      const list = filteredOrder();
+      if (list.length === 0) {
+        questionTitle.textContent = "这个筛选下没有题目";
+        questionStem.textContent = "换一个分类试试。";
+        questionMeta.innerHTML = "";
+        optionsWrap.innerHTML = "";
+        questionVisual.innerHTML = "";
+        answerInputWrap.classList.add("hidden");
+        return;
+      }
+
+      currentPosition = Math.max(0, Math.min(currentPosition, list.length - 1));
+      const question = currentQuestion();
+      const saved = state.get(question.id);
+
+      questionMeta.innerHTML = `
+        <span class="tag">${question.category}</span>
+        <span class="tag level">${question.level}</span>
+        <span class="tag">${currentPosition + 1} / ${list.length}</span>
+        <span class="tag">参考：${question.source}</span>
+      `;
+      questionTitle.textContent = question.title;
+      questionStem.textContent = question.stem;
+      renderVisual(question);
+      feedback.className = "feedback";
+      feedback.innerHTML = "";
+      optionsWrap.innerHTML = "";
+      answerInputWrap.classList.toggle("hidden", question.type !== "text");
+      answerInput.value = saved?.textAnswer || "";
+      answerInput.placeholder = question.placeholder || "输入答案";
+
+      if (question.type === "choice") {
+        question.options.forEach((option, index) => {
+          const button = document.createElement("button");
+          button.className = "option";
+          button.innerHTML = `<span class="letter">${String.fromCharCode(65 + index)}</span><span>${option}</span>`;
+          button.addEventListener("click", () => {
+            const latest = state.get(question.id) || {};
+            if (latest.submitted) return;
+            state.set(question.id, { ...latest, selected: index });
+            renderQuestion();
+          });
+          if (saved?.selected === index) button.classList.add("selected");
+          if (saved?.submitted && index === question.correct) button.classList.add("correct");
+          if (saved?.submitted && saved.selected === index && index !== question.correct) button.classList.add("wrong");
+          optionsWrap.appendChild(button);
+        });
+      }
+
+      if (saved?.submitted) {
+        showFeedback(question, saved.correct);
+      }
+
+      prevButton.disabled = currentPosition === 0;
+      nextButton.disabled = currentPosition === list.length - 1;
+      updateScore();
+    }
+
+    function showFeedback(question, isCorrect, hintOnly = false) {
+      feedback.className = `feedback show ${isCorrect ? "" : "wrong"}`;
+      if (hintOnly) {
+        feedback.className = "feedback show";
+        feedback.innerHTML = `<strong>提示</strong>${question.hint}`;
+        return;
+      }
+      feedback.innerHTML = `
+        <strong>${isCorrect ? "答对了" : "还差一点"}</strong>
+        ${question.explanation}
+      `;
+    }
+
+    function submitAnswer() {
+      const question = currentQuestion();
+      const saved = state.get(question.id) || {};
+      let correct = false;
+      let nextState = { ...saved, submitted: true };
+
+      if (question.type === "choice") {
+        if (saved.selected === undefined) {
+          showFeedback(question, false, true);
+          return;
+        }
+        correct = saved.selected === question.correct;
+      } else {
+        const value = answerInput.value;
+        correct = question.answer.some((item) => normalizeText(item) === normalizeText(value));
+        nextState.textAnswer = value;
+      }
+
+      nextState.correct = correct;
+      state.set(question.id, nextState);
+      renderQuestion();
+    }
+
+    function updateScore() {
+      const attempted = [...state.values()].filter((item) => item.submitted);
+      const correct = attempted.filter((item) => item.correct).length;
+      scoreNumber.textContent = `${correct}/${attempted.length}`;
+      const percent = attempted.length === 0 ? 0 : Math.round((correct / attempted.length) * 100);
+      barFill.style.width = `${percent}%`;
+      scoreText.textContent = attempted.length === 0
+        ? "做完题后这里会显示正确率。"
+        : `正确率 ${percent}%；当前筛选不会清空进度。`;
+      renderWrongList();
+    }
+
+    function renderWrongList() {
+      const wrongItems = questions.filter((question) => {
+        const item = state.get(question.id);
+        return item?.submitted && !item.correct;
+      });
+
+      if (wrongItems.length === 0) {
+        wrongList.innerHTML = "<p>还没有错题。</p>";
+        return;
+      }
+
+      wrongList.innerHTML = "";
+      wrongItems.forEach((question) => {
+        const button = document.createElement("button");
+        button.className = "wrong-item";
+        button.textContent = `${question.category}：${question.title}`;
+        button.addEventListener("click", () => {
+          activeFilter = "all";
+          document.querySelectorAll("[data-filter]").forEach((item) => item.classList.toggle("active", item.dataset.filter === "all"));
+          const list = filteredOrder();
+          currentPosition = list.indexOf(questions.indexOf(question));
+          renderQuestion();
+        });
+        wrongList.appendChild(button);
+      });
+    }
+
+    function shuffleCurrentOrder() {
+      for (let index = order.length - 1; index > 0; index -= 1) {
+        const target = Math.floor(Math.random() * (index + 1));
+        [order[index], order[target]] = [order[target], order[index]];
+      }
+      currentPosition = 0;
+      renderQuestion();
+    }
+
+    document.querySelectorAll("[data-view]").forEach((button) => {
+      button.addEventListener("click", () => {
+        const view = button.dataset.view;
+        document.querySelectorAll("[data-view]").forEach((item) => item.classList.toggle("active", item === button));
+        quizView.classList.toggle("hidden", view !== "quiz");
+        principlesView.classList.toggle("hidden", view !== "principles");
+        sourcesView.classList.toggle("hidden", view !== "sources");
+        panelTitle.textContent = view === "quiz" ? "练习模式" : view === "principles" ? "出题原则" : "来源参考";
+      });
+    });
+
+    document.querySelectorAll("[data-filter]").forEach((button) => {
+      button.addEventListener("click", () => {
+        activeFilter = button.dataset.filter;
+        currentPosition = 0;
+        document.querySelectorAll("[data-filter]").forEach((item) => item.classList.toggle("active", item === button));
+        renderQuestion();
+      });
+    });
+
+    submitButton.addEventListener("click", submitAnswer);
+    showHintButton.addEventListener("click", () => showFeedback(currentQuestion(), true, true));
+    prevButton.addEventListener("click", () => {
+      currentPosition -= 1;
+      renderQuestion();
+    });
+    nextButton.addEventListener("click", () => {
+      currentPosition += 1;
+      renderQuestion();
+    });
+    shuffleButton.addEventListener("click", shuffleCurrentOrder);
+    resetButton.addEventListener("click", () => {
+      state.clear();
+      renderQuestion();
+    });
+    answerInput.addEventListener("keydown", (event) => {
+      if (event.key === "Enter") submitAnswer();
+    });
+
+    const calcControls = {
+      input: document.querySelector("#calcInput"),
+      hidden: document.querySelector("#calcHidden"),
+      output: document.querySelector("#calcOutput")
+    };
+    const calcLabels = {
+      input: document.querySelector("#calcInputValue"),
+      hidden: document.querySelector("#calcHiddenValue"),
+      output: document.querySelector("#calcOutputValue"),
+      result: document.querySelector("#calcResult")
+    };
+
+    function renderCalc() {
+      const input = Number(calcControls.input.value);
+      const hidden = Number(calcControls.hidden.value);
+      const output = Number(calcControls.output.value);
+      const params = input * hidden + hidden + hidden * output + output;
+      calcLabels.input.textContent = input;
+      calcLabels.hidden.textContent = hidden;
+      calcLabels.output.textContent = output;
+      calcLabels.result.textContent =
+        `参数量 = 输入到隐藏 ${input * hidden} + 隐藏偏置 ${hidden} + 隐藏到输出 ${hidden * output} + 输出偏置 ${output} = ${params}`;
+    }
+
+    Object.values(calcControls).forEach((control) => control.addEventListener("input", renderCalc));
+    renderCalc();
+    renderQuestion();
+  </script>
+</body>
+</html>
