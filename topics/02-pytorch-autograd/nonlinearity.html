@@ -1,0 +1,559 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>非线性：为什么 Linear 后面要接 ReLU</title>
+  <link rel="stylesheet" href="glossary.css" />
+  <style>
+    :root {
+      --paper: #f6f4ee;
+      --ink: #202124;
+      --muted: #62665d;
+      --line: #d7d1c3;
+      --white: #ffffff;
+      --teal: #0f766e;
+      --blue: #315caa;
+      --amber: #b86f14;
+      --rose: #a83e51;
+      --soft-blue: #e7edf9;
+      --soft-amber: #f5e5cf;
+      --soft-green: #e3f0e8;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      color: var(--ink);
+      background: var(--paper);
+      font-family: "Microsoft YaHei", "PingFang SC", "Segoe UI", sans-serif;
+    }
+
+    header,
+    main {
+      width: min(1180px, calc(100% - 32px));
+      margin: 0 auto;
+    }
+
+    header { padding: 24px 0 18px; }
+
+    .nav {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-bottom: 18px;
+    }
+
+    a,
+    button {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 9px 12px;
+      color: var(--ink);
+      background: var(--white);
+      font: inherit;
+      font-weight: 700;
+      text-decoration: none;
+      cursor: pointer;
+    }
+
+    button.active {
+      color: var(--white);
+      border-color: var(--teal);
+      background: var(--teal);
+    }
+
+    h1 {
+      margin: 0 0 10px;
+      font-size: clamp(28px, 4vw, 46px);
+      line-height: 1.12;
+      letter-spacing: 0;
+    }
+
+    h2,
+    h3 {
+      margin: 0;
+      letter-spacing: 0;
+    }
+
+    p {
+      margin: 0;
+      color: var(--muted);
+      line-height: 1.75;
+    }
+
+    main {
+      display: grid;
+      gap: 16px;
+      padding-bottom: 36px;
+    }
+
+    .section {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      overflow: hidden;
+      background: var(--white);
+    }
+
+    .section-head {
+      padding: 14px 16px;
+      border-bottom: 1px solid var(--line);
+      background: #fbfaf5;
+    }
+
+    .section-body { padding: 16px; }
+
+    .explain-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 12px;
+    }
+
+    .note {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 13px;
+      background: #fffdf8;
+      line-height: 1.72;
+    }
+
+    .note:nth-child(1) { background: var(--soft-blue); }
+    .note:nth-child(2) { background: var(--soft-amber); }
+    .note:nth-child(3) { background: var(--soft-green); }
+
+    .note strong {
+      display: block;
+      margin-bottom: 6px;
+      color: var(--ink);
+    }
+
+    .two {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) minmax(360px, 0.95fr);
+      gap: 16px;
+      align-items: stretch;
+    }
+
+    .chart-wrap {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 12px;
+      min-height: 360px;
+      background: #ffffff;
+    }
+
+    canvas {
+      display: block;
+      width: 100%;
+      min-height: 330px;
+    }
+
+    .controls {
+      display: grid;
+      gap: 12px;
+    }
+
+    .mode-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .control {
+      display: grid;
+      grid-template-columns: 128px 1fr 72px;
+      gap: 10px;
+      align-items: center;
+    }
+
+    label { font-weight: 700; }
+
+    input[type="range"] {
+      width: 100%;
+      accent-color: var(--teal);
+    }
+
+    .formula {
+      margin-top: 14px;
+      border-radius: 8px;
+      padding: 12px;
+      color: #f7f7f2;
+      background: #202124;
+      font-family: Consolas, "Courier New", monospace;
+      line-height: 1.75;
+      overflow-wrap: anywhere;
+    }
+
+    .story {
+      display: grid;
+      gap: 12px;
+    }
+
+    .story-row {
+      display: grid;
+      grid-template-columns: 120px 1fr;
+      gap: 12px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 12px;
+      background: #fffdf8;
+      line-height: 1.72;
+    }
+
+    .tag {
+      display: grid;
+      place-items: center;
+      border-radius: 8px;
+      min-height: 72px;
+      color: var(--white);
+      background: var(--teal);
+      font-weight: 900;
+      text-align: center;
+    }
+
+    .story-row:nth-child(2) .tag { background: var(--blue); }
+    .story-row:nth-child(3) .tag { background: var(--amber); }
+    .story-row:nth-child(4) .tag { background: var(--rose); }
+
+    @media (max-width: 940px) {
+      .two,
+      .explain-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .story-row {
+        grid-template-columns: 1fr;
+      }
+
+      .tag {
+        min-height: 42px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <nav class="nav" aria-label="页面导航">
+      <a href="README.md">主题说明</a>
+      <a href="scenario.html">项目场景</a>
+      <a href="slides.html">PPT 讲义</a>
+      <a href="demo-web/index.html">自动求导演示</a>
+      <a href="logic-map.html">逻辑图</a>
+      <a href="demo-project/mini_autograd.py">源码</a>
+    </nav>
+    <h1>非线性：为什么 Linear 后面要接 ReLU</h1>
+    <p>如果模型只有 Linear，它像一把直尺，只会画直线；加上 ReLU 后，它能用很多小折线拼出“过了某个条件才明显变化”的业务规律。</p>
+  </header>
+
+  <main>
+    <section class="section">
+      <div class="section-head">
+        <h2>先用业务类比理解</h2>
+      </div>
+      <div class="section-body explain-grid">
+        <article class="note">
+          <strong>Linear：固定加权</strong>
+          <p>像给每个因素打分再求和。商品件数多一点，风险就按固定比例加一点。它简单、稳定，但只能表达直线关系。</p>
+        </article>
+        <article class="note">
+          <strong>ReLU：触发开关</strong>
+          <p>像业务阈值。没到截单压力时，这个风险信号可以当 0；一旦超过阈值，它才开始明显影响结果。</p>
+        </article>
+        <article class="note">
+          <strong>非线性：允许拐弯</strong>
+          <p>真实业务常常不是一条直线。比如少量订单很好处理，但仓库接近满负载后，延迟风险会突然变陡。</p>
+        </article>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="section-head">
+        <h2>互动：一条直线和几段折线的差别</h2>
+      </div>
+      <div class="section-body two">
+        <div class="chart-wrap">
+          <canvas id="chart" width="720" height="390" aria-label="Linear 和 ReLU 非线性对比图"></canvas>
+        </div>
+
+        <aside>
+          <div class="controls">
+            <div class="mode-row" role="group" aria-label="模型模式">
+              <button id="linearMode" class="active" type="button">只有 Linear</button>
+              <button id="oneReluMode" type="button">Linear + 1 个 ReLU</button>
+              <button id="twoReluMode" type="button">Linear + 2 个 ReLU</button>
+            </div>
+
+            <div class="control">
+              <label for="baseInput">基础风险 b</label>
+              <input id="baseInput" type="range" min="0" max="4" step="0.1" value="1.2" />
+              <span id="baseValue">1.2</span>
+            </div>
+
+            <div class="control">
+              <label for="slopeInput">线性斜率 w</label>
+              <input id="slopeInput" type="range" min="-0.2" max="1.2" step="0.05" value="0.35" />
+              <span id="slopeValue">0.35</span>
+            </div>
+
+            <div class="control">
+              <label for="gateOneInput">开关 1 强度</label>
+              <input id="gateOneInput" type="range" min="0" max="2.2" step="0.1" value="0.9" />
+              <span id="gateOneValue">0.9</span>
+            </div>
+
+            <div class="control">
+              <label for="gateTwoInput">开关 2 强度</label>
+              <input id="gateTwoInput" type="range" min="0" max="2.2" step="0.1" value="1.2" />
+              <span id="gateTwoValue">1.2</span>
+            </div>
+          </div>
+
+          <div class="formula" id="formulaText"></div>
+        </aside>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="section-head">
+        <h2>它和神经网络的关系</h2>
+      </div>
+      <div class="section-body story">
+        <article class="story-row">
+          <div class="tag">没有 ReLU</div>
+          <p>Linear 接 Linear，数学上还是能合并成一个 Linear。就像你连续用几把直尺画线，最后仍然是一条直线。</p>
+        </article>
+        <article class="story-row">
+          <div class="tag">加了 ReLU</div>
+          <p>ReLU 把一部分信号截断为 0，等于给模型加了“条件开关”。这些开关让模型能表达分段规则。</p>
+        </article>
+        <article class="story-row">
+          <div class="tag">多层网络</div>
+          <p>很多 Linear + ReLU 叠起来，就像很多小业务规则组合：库存低、仓库忙、快到截单、商品复杂，这些信号可以互相影响。</p>
+        </article>
+        <article class="story-row">
+          <div class="tag">关键记法</div>
+          <p>Linear 负责加权汇总，ReLU 负责让规则能拐弯。非线性不是玄学，它就是让模型不被限制在一条直线上。</p>
+        </article>
+      </div>
+    </section>
+  </main>
+
+  <script src="glossary.js"></script>
+  <script>
+    const points = [
+      { x: 1, y: 1.5 },
+      { x: 2, y: 2.0 },
+      { x: 3, y: 2.6 },
+      { x: 4, y: 4.3 },
+      { x: 5, y: 6.4 },
+      { x: 6, y: 8.7 },
+      { x: 7, y: 10.6 },
+      { x: 8, y: 11.8 }
+    ];
+
+    const chart = document.querySelector("#chart");
+    const ctx = chart.getContext("2d");
+    const modes = {
+      linear: document.querySelector("#linearMode"),
+      oneRelu: document.querySelector("#oneReluMode"),
+      twoRelu: document.querySelector("#twoReluMode")
+    };
+    const inputs = {
+      base: document.querySelector("#baseInput"),
+      slope: document.querySelector("#slopeInput"),
+      gateOne: document.querySelector("#gateOneInput"),
+      gateTwo: document.querySelector("#gateTwoInput")
+    };
+    const labels = {
+      base: document.querySelector("#baseValue"),
+      slope: document.querySelector("#slopeValue"),
+      gateOne: document.querySelector("#gateOneValue"),
+      gateTwo: document.querySelector("#gateTwoValue"),
+      formula: document.querySelector("#formulaText")
+    };
+
+    let currentMode = "linear";
+
+    function readNumber(name) {
+      return Number(inputs[name].value);
+    }
+
+    function relu(value) {
+      return Math.max(0, value);
+    }
+
+    function predict(x) {
+      const base = readNumber("base");
+      const slope = readNumber("slope");
+      const gateOne = readNumber("gateOne");
+      const gateTwo = readNumber("gateTwo");
+      let y = base + slope * x;
+
+      if (currentMode === "oneRelu" || currentMode === "twoRelu") {
+        y += gateOne * relu(x - 3);
+      }
+
+      if (currentMode === "twoRelu") {
+        y += gateTwo * relu(x - 5);
+      }
+
+      return y;
+    }
+
+    function drawGate(x, y, text) {
+      ctx.strokeStyle = "#a83e51";
+      ctx.lineWidth = 2;
+      ctx.setLineDash([5, 5]);
+      ctx.beginPath();
+      ctx.moveTo(x, y);
+      ctx.lineTo(x, chart.height - 44);
+      ctx.stroke();
+      ctx.setLineDash([]);
+
+      ctx.fillStyle = "#a83e51";
+      ctx.font = "14px Microsoft YaHei, sans-serif";
+      ctx.fillText(text, x + 6, y + 5);
+    }
+
+    function drawChart() {
+      const width = chart.width;
+      const height = chart.height;
+      const pad = 44;
+      const xMin = 0;
+      const xMax = 9;
+      const yMin = 0;
+      const yMax = 13;
+
+      function px(x) {
+        return pad + (x - xMin) / (xMax - xMin) * (width - pad * 1.55);
+      }
+
+      function py(y) {
+        return height - pad - (y - yMin) / (yMax - yMin) * (height - pad * 1.45);
+      }
+
+      ctx.clearRect(0, 0, width, height);
+      ctx.fillStyle = "#fbfaf5";
+      ctx.fillRect(0, 0, width, height);
+
+      ctx.strokeStyle = "#d7d1c3";
+      ctx.lineWidth = 1;
+      for (let x = 0; x <= 9; x += 1) {
+        ctx.beginPath();
+        ctx.moveTo(px(x), py(0));
+        ctx.lineTo(px(x), py(13));
+        ctx.stroke();
+      }
+      for (let y = 0; y <= 12; y += 2) {
+        ctx.beginPath();
+        ctx.moveTo(px(0), py(y));
+        ctx.lineTo(px(9), py(y));
+        ctx.stroke();
+      }
+
+      ctx.strokeStyle = "#202124";
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.moveTo(px(0), py(0));
+      ctx.lineTo(px(9), py(0));
+      ctx.moveTo(px(0), py(0));
+      ctx.lineTo(px(0), py(13));
+      ctx.stroke();
+
+      ctx.fillStyle = "#62665d";
+      ctx.font = "15px Microsoft YaHei, sans-serif";
+      ctx.fillText("仓库压力 x", px(4.2), height - 10);
+      ctx.save();
+      ctx.translate(16, py(6.5) + 36);
+      ctx.rotate(-Math.PI / 2);
+      ctx.fillText("延迟风险 prediction", 0, 0);
+      ctx.restore();
+
+      ctx.strokeStyle = "#0f766e";
+      ctx.lineWidth = 4;
+      ctx.beginPath();
+      for (let i = 0; i <= 180; i += 1) {
+        const x = xMin + (xMax - xMin) * i / 180;
+        const y = predict(x);
+        if (i === 0) {
+          ctx.moveTo(px(x), py(y));
+        } else {
+          ctx.lineTo(px(x), py(y));
+        }
+      }
+      ctx.stroke();
+
+      for (const point of points) {
+        ctx.fillStyle = "#315caa";
+        ctx.beginPath();
+        ctx.arc(px(point.x), py(point.y), 6, 0, Math.PI * 2);
+        ctx.fill();
+      }
+
+      if (currentMode === "oneRelu" || currentMode === "twoRelu") {
+        drawGate(px(3), py(12.4), "开关1：x > 3");
+      }
+
+      if (currentMode === "twoRelu") {
+        drawGate(px(5), py(11.2), "开关2：x > 5");
+      }
+    }
+
+    function renderFormula() {
+      const base = readNumber("base");
+      const slope = readNumber("slope");
+      const gateOne = readNumber("gateOne");
+      const gateTwo = readNumber("gateTwo");
+
+      labels.base.textContent = base.toFixed(1);
+      labels.slope.textContent = slope.toFixed(2);
+      labels.gateOne.textContent = gateOne.toFixed(1);
+      labels.gateTwo.textContent = gateTwo.toFixed(1);
+
+      let formula = `Linear: prediction = ${base.toFixed(1)} + ${slope.toFixed(2)} * x`;
+      if (currentMode === "oneRelu") {
+        formula += `<br>Linear + ReLU: prediction += ${gateOne.toFixed(1)} * ReLU(x - 3)`;
+      }
+      if (currentMode === "twoRelu") {
+        formula += `<br>Linear + ReLU: prediction += ${gateOne.toFixed(1)} * ReLU(x - 3)`;
+        formula += `<br>再加一个 ReLU: prediction += ${gateTwo.toFixed(1)} * ReLU(x - 5)`;
+      }
+      formula += `<br>ReLU(z) = max(0, z)：没过线就是 0，过线才保留。`;
+      labels.formula.innerHTML = formula;
+
+      if (window.LLMLabGlossary) {
+        window.LLMLabGlossary.apply(labels.formula);
+      }
+    }
+
+    function render() {
+      Object.values(modes).forEach((button) => button.classList.remove("active"));
+      modes[currentMode].classList.add("active");
+      drawChart();
+      renderFormula();
+    }
+
+    modes.linear.addEventListener("click", () => {
+      currentMode = "linear";
+      render();
+    });
+
+    modes.oneRelu.addEventListener("click", () => {
+      currentMode = "oneRelu";
+      render();
+    });
+
+    modes.twoRelu.addEventListener("click", () => {
+      currentMode = "twoRelu";
+      render();
+    });
+
+    for (const input of Object.values(inputs)) {
+      input.addEventListener("input", render);
+    }
+
+    render();
+  </script>
+</body>
+</html>
