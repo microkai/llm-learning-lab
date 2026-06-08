@@ -46,6 +46,23 @@
 前向传播负责生成答案和计算图；backward 负责自动算梯度；optimizer 负责改参数。
 ```
 
+## 先打开前端讲解
+
+有前端讲解，只是入口之前写得太像文件清单了，不够像“学习路线”。
+
+建议按这个顺序看：
+
+1. [slides.html](slides.html)
+   PPT 式讲解，先用图把“PyTorch 到底替我们做了什么”讲顺。
+
+2. [demo-web/index.html](demo-web/index.html)
+   互动演示，拖动权重、偏置和学习率，看 loss、梯度、下一步参数怎么变。
+
+3. [logic-map.html](logic-map.html)
+   代码逻辑图，把“前向计算、记录计算图、反向传播、参数更新”对应到 `mini_autograd.py` 的关键行号。
+
+这些都是静态 HTML，直接在浏览器打开就行，不需要启动服务。
+
 ## 这一节要学会什么
 
 - 张量（tensor，白话：能被框架批量计算的多维数字表）。
