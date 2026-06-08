@@ -704,6 +704,68 @@ class VideoAudioDataset(Dataset):
 视频 + 音频 -> dict，里面放多个 tensor
 ```
 
+## loss 是可设计的标量目标
+
+一句话结论：
+
+```text
+loss 是把模型在当前 batch 上的表现压缩成一个可优化的标量目标；PyTorch 固定负责沿这个标量目标反向算梯度，但这个目标怎么定义，是人可以设计的。
+```
+
+参数不是不参与运算。训练每一轮都会用参数做 forward、算 grad、再更新参数。
+
+更准确的关系是：
+
+```text
+参数 -> forward -> prediction
+prediction + target -> loss 标量
+loss.backward() -> 每个参数的 grad
+optimizer.step() -> 更新参数
+```
+
+为什么通常要合成一个标量 loss？
+
+```text
+因为 backward 需要知道：我要最小化哪个总目标。
+```
+
+如果有很多条样本、很多个任务、很多个惩罚项，最后通常要合成一个：
+
+```python
+total_loss = ...
+total_loss.backward()
+```
+
+常见设计方式：
+
+```python
+# 普通回归：所有错误一视同仁。
+total_loss = mse_loss
+
+# 样本加权：某些样本更重要。
+total_loss = (loss_each * sample_weights).mean()
+
+# 多任务：同时优化多个目标，但权重不同。
+total_loss = cls_loss + 0.5 * regression_loss
+
+# 加正则：既要预测准，也不希望参数太夸张。
+total_loss = mse_loss + 0.01 * weight_penalty
+```
+
+人话理解：
+
+```text
+loss 不是随便算一个数字。
+loss 是你告诉模型“什么叫好、什么错更严重、什么目标更重要”的方式。
+```
+
+容易误解的地方：
+
+```text
+不是 loss 替代了参数运算。
+参数是被调整的对象，loss 是调整方向的评价标准，grad 是 loss 对每个参数的变化率。
+```
+
 ## 这一段的总总结
 
 ```text
