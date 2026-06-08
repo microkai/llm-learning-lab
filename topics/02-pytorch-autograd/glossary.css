@@ -1,0 +1,60 @@
+.glossary-term {
+  border-bottom: 2px dotted rgba(15, 118, 110, 0.55);
+  color: inherit;
+  cursor: help;
+  text-decoration: none;
+  text-underline-offset: 3px;
+}
+
+.glossary-term:hover,
+.glossary-term:focus {
+  border-bottom-color: #0f766e;
+  outline: none;
+}
+
+.glossary-term:focus-visible {
+  border-radius: 4px;
+  box-shadow: 0 0 0 3px rgba(15, 118, 110, 0.22);
+}
+
+.formula .glossary-term,
+.code .glossary-term {
+  border-bottom-color: rgba(245, 229, 207, 0.9);
+  color: #ffffff;
+}
+
+.glossary-tooltip {
+  position: fixed;
+  z-index: 9999;
+  width: min(360px, calc(100vw - 28px));
+  border: 1px solid #d7d1c3;
+  border-radius: 8px;
+  padding: 12px 14px;
+  color: #202124;
+  background: #ffffff;
+  box-shadow: 0 14px 40px rgba(32, 33, 36, 0.18);
+  font-family: "Microsoft YaHei", "PingFang SC", "Segoe UI", sans-serif;
+  line-height: 1.65;
+  pointer-events: none;
+  opacity: 0;
+  transform: translateY(6px);
+  transition: opacity 140ms ease, transform 140ms ease;
+}
+
+.glossary-tooltip.visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.glossary-tooltip strong {
+  display: block;
+  margin-bottom: 4px;
+  color: #0f766e;
+  font-size: 15px;
+}
+
+.glossary-tooltip span {
+  display: block;
+  color: #3f443d;
+  font-size: 14px;
+}

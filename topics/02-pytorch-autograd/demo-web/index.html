@@ -4,6 +4,7 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>自动求导互动演示</title>
+  <link rel="stylesheet" href="../glossary.css" />
   <style>
     :root {
       --paper: #f6f4ee;
@@ -330,6 +331,7 @@
     </aside>
   </main>
 
+  <script src="../glossary.js"></script>
   <script>
     const inputs = {
       x: document.querySelector("#xInput"),
@@ -396,6 +398,9 @@
         `loss = (prediction-target)² = (${item.error.toFixed(3)})² = ${item.loss.toFixed(3)}<br>` +
         `w.grad = 2*error*x = ${item.wGrad.toFixed(3)}，b.grad = 2*error = ${item.bGrad.toFixed(3)}<br>` +
         `下一步：w -= lr*w.grad，b -= lr*b.grad`;
+      if (window.LLMLabGlossary) {
+        window.LLMLabGlossary.apply(labels.formula);
+      }
     }
 
     for (const input of Object.values(inputs)) {
