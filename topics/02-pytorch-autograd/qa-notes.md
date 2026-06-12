@@ -406,12 +406,6 @@ Dataset / DataLoader：读数据、清洗、转 tensor、组 batch。
 training-pipeline.html
 ```
 
-Dataset 阶段更完整的设计笔记：
-
-```text
-dataset-notes.md
-```
-
 学习顺序建议：
 
 ```text
@@ -770,6 +764,367 @@ loss 是你告诉模型“什么叫好、什么错更严重、什么目标更重
 ```text
 不是 loss 替代了参数运算。
 参数是被调整的对象，loss 是调整方向的评价标准，grad 是 loss 对每个参数的变化率。
+```
+
+## 今日主线复盘：从数据到优化器
+
+这一段整理今天顺着 Dataset 往后补齐的主线。
+
+### Dataset 是接口，不是自动清洗器
+
+一句话结论：
+
+```text
+Dataset 只规定“怎么取一条样本”，具体清洗、merge、标准化、编码、防泄漏，都要人设计和编排。
+```
+
+推荐分工：
+
+```text
+Dataset 外面：
+多表 merge、复杂聚合、train/validation/test 切分、统计 mean/std、构建类别 vocab、保存预处理配置。
+
+Dataset 里面：
+按 index 取一条样本，做轻量转换，返回 feature tensor + target tensor。
+```
+
+常见数据类型的 Dataset 注释版和 Dataset 阶段检查清单，单独放在：
+
+```text
+dataset-notes.md
+```
+
+容易误解的地方：
+
+```text
+不是“把数据丢给 Dataset，它就会自动处理”。
+Dataset 是你写处理逻辑的入口，不是自动特征工程工具。
+```
+
+### DataLoader 是批量传送带
+
+一句话结论：
+
+```text
+Dataset 管单条样本，DataLoader 管怎么把样本一批一批交给训练 loop。
+```
+
+DataLoader 大概做这些事：
+
+```text
+1. 调用 len(dataset)，知道样本总数。
+2. 生成 index 列表。
+3. shuffle=True 时，每个 epoch 打乱 index。
+4. 每次取 batch_size 个 index。
+5. 多次调用 dataset[index] 拿单条样本。
+6. 用 collate_fn 把多条样本拼成 batch。
+7. 把 batch 交给训练 loop。
+```
+
+shape 变化：
+
+```text
+单条 features: [3]
+batch_size=32 后: [32, 3]
+
+单条图片: [3, H, W]
+batch_size=32 后: [32, 3, H, W]
+```
+
+一个 epoch 里的 step 次数：
+
+```text
+训练集 3200 条
+batch_size = 32
+一个 epoch 大约有 100 个 batch
+也就是 optimizer.step() 大约执行 100 次
+```
+
+容易误解的地方：
+
+```text
+DataLoader 不算梯度，不更新参数。
+它只是按规则取样本、打乱、组 batch。
+```
+
+### train 和 validation 是两种角色
+
+一句话结论：
+
+```text
+训练集负责教模型，验证集负责考模型。
+```
+
+训练阶段：
+
+```python
+model.train()
+
+for features, targets in train_loader:
+    optimizer.zero_grad()
+    predictions = model(features)
+    loss = loss_fn(predictions, targets)
+    loss.backward()
+    optimizer.step()
+```
+
+验证阶段：
+
+```python
+model.eval()
+
+with torch.no_grad():
+    for features, targets in val_loader:
+        predictions = model(features)
+        loss = loss_fn(predictions, targets)
+```
+
+区别：
+
+```text
+训练：
+forward -> loss -> backward -> step
+会更新参数。
+
+验证：
+forward -> loss / metric
+不 backward，不 step，不更新参数。
+```
+
+`model.train()` 和 `model.eval()` 的作用：
+
+```text
+model.train()
+告诉模型现在是训练，Dropout、BatchNorm 等层使用训练行为。
+
+model.eval()
+告诉模型现在是验证或预测，输出要稳定，Dropout 关闭，BatchNorm 使用稳定统计。
+```
+
+`torch.no_grad()` 的作用：
+
+```text
+告诉 PyTorch 这段不需要计算图和梯度。
+验证/预测只看结果，不需要 backward。
+```
+
+### 为什么验证阶段不 backward
+
+一句话结论：
+
+```text
+验证集可以指导训练策略，但不应该直接训练参数。
+```
+
+关键区分：
+
+```text
+loss.backward()
+只算梯度，把验证集梯度写进 parameter.grad。
+它本身不更新参数。
+
+optimizer.step()
+才是真正更新参数。
+```
+
+所以验证时如果只 `backward()` 但不 `step()`：
+
+```text
+主要是浪费计算和内存，还可能污染 .grad。
+```
+
+如果验证时 `backward()` 后又 `step()`：
+
+```text
+验证集就变成训练集，评估不再客观。
+```
+
+正确逻辑：
+
+```text
+训练集：
+用 backward + step 修参数。
+
+验证集：
+只 forward，记录 loss / metric / 错误案例。
+
+人或外层搜索：
+根据验证结果调整 feature、模型结构、loss、学习率、数据采样、早停等策略。
+```
+
+如果外面套超参数搜索，也是：
+
+```text
+每个候选配置用训练集训练参数。
+用验证集打分。
+搜索器根据验证分数选下一组配置。
+验证集不直接 backward 更新模型参数。
+```
+
+### mini-batch 的参数更新逻辑
+
+一句话结论：
+
+```text
+一批样本不会各自生成一份新参数；它们先合成一个 batch loss，再得到一份综合梯度，最后更新一次参数。
+```
+
+默认常见逻辑：
+
+```text
+batch 里每条样本各自有 loss
+-> 求平均 loss
+-> batch_loss.backward()
+-> 得到平均梯度
+-> optimizer.step()
+-> 更新一次参数
+```
+
+等价理解：
+
+```text
+grad = (grad1 + grad2 + grad3 + ... + gradN) / N
+参数 = 参数 - 学习率 * grad
+```
+
+loss 合并规则是活的：
+
+```text
+mean：平均，最常用。
+sum：求和，受 batch_size 影响更明显。
+none：保留每条样本 loss，自己加权或组合。
+样本权重：重要样本罚重一点。
+类别权重：少数类错了罚重一点。
+多任务 loss：多个目标按权重合成 total_loss。
+鲁棒 loss：降低异常值影响。
+```
+
+固定骨架：
+
+```text
+最终要合成一个可反向传播的标量 total_loss。
+PyTorch 沿 total_loss 算梯度。
+```
+
+### 保存最佳模型，而不是最后模型
+
+一句话结论：
+
+```text
+真实训练常保存验证集表现最好的一轮，而不是默认保存最后一轮。
+```
+
+因为：
+
+```text
+训练集 loss 可能继续下降。
+验证集 loss 可能开始变差。
+这说明模型可能开始背训练集。
+```
+
+常见逻辑：
+
+```python
+if val_loss < best_val_loss:
+    best_val_loss = val_loss
+    torch.save(model.state_dict(), "best_model.pt")
+```
+
+`state_dict` 是模型参数字典：
+
+```text
+layer1.weight
+layer1.bias
+output_layer.weight
+output_layer.bias
+```
+
+预测时：
+
+```python
+model = OrderDelayModel()
+model.load_state_dict(torch.load("best_model.pt", map_location="cpu"))
+model.eval()
+
+with torch.no_grad():
+    prediction = model(new_features)
+```
+
+容易误解的地方：
+
+```text
+state_dict 保存的是参数，不是整个模型设计。
+加载时要先创建同样结构的 model。
+```
+
+### SGD、Adam、AdamW 都是固定规则
+
+一句话结论：
+
+```text
+优化器不是理解任务的智能体，而是按固定数学规则读取 parameter.grad，并更新每个 parameter。
+```
+
+SGD：
+
+```text
+参数 = 参数 - 学习率 * 梯度
+```
+
+SGD + momentum：
+
+```text
+在当前梯度之外，保留一部分历史方向惯性。
+连续方向一致时走得更稳，当前梯度乱跳时不至于完全被带偏。
+```
+
+Adam：
+
+```text
+给每个参数维护自己的历史梯度统计。
+```
+
+Adam 内部会为每个参数维护：
+
+```text
+m：一阶动量，近似历史平均方向。
+v：二阶动量，近似历史波动大小。
+step：更新到了第几步。
+```
+
+所以 Adam 可以做到：
+
+```text
+每个参数根据自己的梯度历史，自动调整更新幅度。
+```
+
+AdamW：
+
+```text
+Adam + 更合理的 weight_decay。
+```
+
+`weight_decay` 的人话：
+
+```text
+别让参数长得太夸张。
+```
+
+代码：
+
+```python
+optimizer = torch.optim.AdamW(
+    model.parameters(),
+    lr=0.001,
+    weight_decay=0.01,
+)
+```
+
+容易误解的地方：
+
+```text
+Adam/AdamW 不是自己理解业务。
+它只是根据每个参数的历史梯度，用固定公式动态调整更新策略。
 ```
 
 ## 这一段的总总结
