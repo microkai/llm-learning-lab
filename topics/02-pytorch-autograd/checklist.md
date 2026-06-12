@@ -15,6 +15,8 @@
 - [ ] 我能解释 `model.train()`、`model.eval()` 和 `torch.no_grad()` 为什么不属于参数更新公式，但真实项目必须用。
 - [ ] 我能解释 optimizer 和 scheduler 的分工：一个更新参数，一个调整学习率。
 - [ ] 我能说出学习率策略是可设计的，可以手动改 `optimizer.param_groups` 或用 `LambdaLR`。
+- [ ] 我能说出 Dropout、weight_decay、BatchNorm、LayerNorm、gradient clipping 各自解决什么问题。
+- [ ] 我能指出 gradient clipping 应该放在 `loss.backward()` 之后、`optimizer.step()` 之前。
 - [ ] 我能说出 PyTorch 帮我们省掉了上一节哪部分手写代码。
 
 ## 代码

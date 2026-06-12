@@ -1245,6 +1245,238 @@ scheduler 不是只能用 PyTorch 内置的。
 只要你能写出规则，就能自己控制每个阶段的 lr。
 ```
 
+### 训练护栏：防过拟合、稳数值、防梯度爆炸
+
+一句话结论：
+
+```text
+Dropout、weight_decay、BatchNorm、LayerNorm、gradient clipping 不改变训练主线，它们是在主线周围加护栏。
+```
+
+整体位置：
+
+```text
+Dataset / DataLoader
+-> forward
+-> loss
+-> backward
+-> gradient clipping（可选，step 前）
+-> optimizer.step
+-> scheduler.step（可选，调学习率）
+```
+
+Dropout、BatchNorm、LayerNorm 通常写在模型结构里：
+
+```text
+__init__ 里定义层
+forward 里调用层
+```
+
+#### Dropout
+
+人话：
+
+```text
+训练时随机关掉一部分中间信号，逼模型别太依赖某几个特征或隐藏信号。
+```
+
+代码：
+
+```python
+self.dropout = nn.Dropout(p=0.2)
+
+def forward(self, x):
+    hidden = self.layer1(x)
+    hidden = torch.relu(hidden)
+    hidden = self.dropout(hidden)
+    output = self.output_layer(hidden)
+    return output
+```
+
+关键点：
+
+```text
+p=0.2 表示训练时随机丢掉 20% 的中间信号。
+model.train() 时 Dropout 生效。
+model.eval() 时 Dropout 自动关闭。
+```
+
+解决的问题：
+
+```text
+防止模型过度依赖某几个信号，降低过拟合风险。
+```
+
+#### weight_decay
+
+人话：
+
+```text
+别让参数长得太夸张。
+```
+
+代码：
+
+```python
+optimizer = torch.optim.AdamW(
+    model.parameters(),
+    lr=0.001,
+    weight_decay=0.01,
+)
+```
+
+它的位置：
+
+```text
+写在 optimizer 里。
+optimizer.step() 更新参数时，会按规则加入权重衰减。
+```
+
+解决的问题：
+
+```text
+让模型别为了训练集某些细节把参数放得过大。
+让模型更平滑，降低过拟合风险。
+```
+
+#### BatchNorm
+
+批归一化（BatchNorm，白话：按一个 batch 的统计量稳定中间数值）。
+
+代码：
+
+```python
+self.layer1 = nn.Linear(8, 32)
+self.bn1 = nn.BatchNorm1d(32)
+
+def forward(self, x):
+    hidden = self.layer1(x)
+    hidden = self.bn1(hidden)
+    hidden = torch.relu(hidden)
+    return hidden
+```
+
+关键点：
+
+```text
+model.train() 时使用当前 batch 的均值和方差。
+model.eval() 时使用训练过程中累计的稳定统计。
+```
+
+解决的问题：
+
+```text
+中间数值尺度更稳定，训练更顺。
+常见于 CNN 或传统深层网络。
+```
+
+#### LayerNorm
+
+层归一化（LayerNorm，白话：按单条样本内部的多个特征稳定数值）。
+
+代码：
+
+```python
+self.norm = nn.LayerNorm(32)
+
+def forward(self, x):
+    hidden = self.layer1(x)
+    hidden = self.norm(hidden)
+    hidden = torch.relu(hidden)
+    return hidden
+```
+
+关键点：
+
+```text
+BatchNorm 看一个 batch 的统计。
+LayerNorm 看单条样本内部的统计。
+```
+
+解决的问题：
+
+```text
+减少对 batch size 的依赖。
+Transformer / LLM 里非常常见。
+```
+
+#### gradient clipping
+
+梯度裁剪（gradient clipping，白话：梯度太大时先压住，再更新参数）。
+
+位置：
+
+```text
+loss.backward() 之后
+optimizer.step() 之前
+```
+
+代码：
+
+```python
+loss.backward()
+
+torch.nn.utils.clip_grad_norm_(
+    model.parameters(),
+    max_norm=1.0,
+)
+
+optimizer.step()
+```
+
+解决的问题：
+
+```text
+防止某一轮梯度突然巨大，导致参数一步飞掉。
+常见于 RNN、Transformer、大模型训练。
+```
+
+#### 放在一起的模型例子
+
+```python
+class Model(nn.Module):
+    def __init__(self):
+        super().__init__()
+        self.layer1 = nn.Linear(8, 32)
+        self.norm = nn.LayerNorm(32)
+        self.dropout = nn.Dropout(0.2)
+        self.output_layer = nn.Linear(32, 1)
+
+    def forward(self, x):
+        hidden = self.layer1(x)
+        hidden = self.norm(hidden)
+        hidden = torch.relu(hidden)
+        hidden = self.dropout(hidden)
+        return self.output_layer(hidden)
+```
+
+#### 总分工
+
+```text
+Dropout：
+防止模型太依赖某些中间信号。
+
+weight_decay：
+限制参数别长太大。
+
+BatchNorm：
+按 batch 稳定中间数值。
+
+LayerNorm：
+按单条样本稳定中间数值。
+
+gradient clipping：
+防止梯度突然爆炸。
+```
+
+容易误解的地方：
+
+```text
+这些不是新的训练主线。
+主线仍然是 forward -> loss -> backward -> step。
+它们只是让这条主线更稳、更不容易学歪。
+```
+
 ## 这一段的总总结
 
 ```text
