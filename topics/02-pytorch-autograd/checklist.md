@@ -17,6 +17,8 @@
 - [ ] 我能说出学习率策略是可设计的，可以手动改 `optimizer.param_groups` 或用 `LambdaLR`。
 - [ ] 我能说出 Dropout、weight_decay、BatchNorm、LayerNorm、gradient clipping 各自解决什么问题。
 - [ ] 我能指出 gradient clipping 应该放在 `loss.backward()` 之后、`optimizer.step()` 之前。
+- [ ] 我能解释 device 的作用，并知道 model、features、targets 必须在同一个 device 上。
+- [ ] 我能处理 dict batch，只把 tensor 调用 `.to(device)`，不移动字符串和路径。
 - [ ] 我能说出 PyTorch 帮我们省掉了上一节哪部分手写代码。
 
 ## 代码

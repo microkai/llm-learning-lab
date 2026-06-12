@@ -1477,6 +1477,105 @@ gradient clipping：
 它们只是让这条主线更稳、更不容易学歪。
 ```
 
+### device：模型和 tensor 必须在同一个计算设备上
+
+一句话结论：
+
+```text
+device 是模型和 tensor 所在的计算位置；参与同一次计算的模型参数、输入 tensor、target tensor 必须在同一个 device 上。
+```
+
+常见设备：
+
+```text
+CPU：
+普通处理器，PyTorch 默认设备。
+
+GPU / CUDA：
+显卡，适合大量矩阵计算。
+```
+
+常见写法：
+
+```python
+device = torch.device(
+    "cuda" if torch.cuda.is_available() else "cpu"
+)
+
+model = Model().to(device)
+```
+
+训练 loop 里：
+
+```python
+for features, targets in train_loader:
+    features = features.to(device)
+    targets = targets.to(device)
+
+    optimizer.zero_grad()
+    predictions = model(features)
+    loss = loss_fn(predictions, targets)
+    loss.backward()
+    optimizer.step()
+```
+
+验证 loop 里也一样：
+
+```python
+model.eval()
+
+with torch.no_grad():
+    for features, targets in val_loader:
+        features = features.to(device)
+        targets = targets.to(device)
+
+        predictions = model(features)
+        loss = loss_fn(predictions, targets)
+```
+
+如果 batch 是 dict：
+
+```python
+batch_on_device = {}
+
+for key, value in batch.items():
+    if torch.is_tensor(value):
+        batch_on_device[key] = value.to(device)
+    else:
+        batch_on_device[key] = value
+```
+
+人话：
+
+```text
+tensor 可以搬到 GPU，字符串、文件路径、普通元信息不能 `.to(device)`。
+```
+
+保存和加载时也要注意 device：
+
+```python
+state_dict = torch.load(
+    "best_model.pt",
+    map_location="cpu",
+)
+
+model.load_state_dict(state_dict)
+```
+
+`map_location="cpu"` 的作用：
+
+```text
+如果模型原来在 GPU 上保存，但当前机器没有 GPU，也能加载到 CPU。
+```
+
+容易误解的地方：
+
+```text
+torch.cuda.is_available() 只是检查当前 PyTorch 环境有没有可用 CUDA GPU。
+如果装的是 CPU 版 PyTorch，它会是 False。
+这不影响小 demo，只是不能用 GPU 加速。
+```
+
 ## 这一段的总总结
 
 ```text
