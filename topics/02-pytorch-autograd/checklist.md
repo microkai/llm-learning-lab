@@ -13,6 +13,8 @@
 - [ ] 我能解释 padding、mask、collate_fn 为什么用于变长样本。
 - [ ] 我能解释为什么 mean/std、类别 vocab 要只从训练集统计并在验证/预测复用。
 - [ ] 我能解释 `model.train()`、`model.eval()` 和 `torch.no_grad()` 为什么不属于参数更新公式，但真实项目必须用。
+- [ ] 我能解释 optimizer 和 scheduler 的分工：一个更新参数，一个调整学习率。
+- [ ] 我能说出学习率策略是可设计的，可以手动改 `optimizer.param_groups` 或用 `LambdaLR`。
 - [ ] 我能说出 PyTorch 帮我们省掉了上一节哪部分手写代码。
 
 ## 代码

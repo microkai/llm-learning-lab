@@ -1127,6 +1127,124 @@ Adam/AdamW 不是自己理解业务。
 它只是根据每个参数的历史梯度，用固定公式动态调整更新策略。
 ```
 
+### scheduler 是学习率策略，不是参数更新器
+
+一句话结论：
+
+```text
+optimizer 负责根据 grad 更新参数，scheduler 负责调整 optimizer 当前用多大的 learning rate。
+```
+
+固定骨架：
+
+```text
+loss.backward()
+-> 参数上有 grad
+-> optimizer.step() 用当前 lr 更新参数
+-> scheduler.step() 调整后续 lr
+```
+
+scheduler 不做这些事：
+
+```text
+不算梯度
+不直接改参数
+不替代 optimizer
+```
+
+它只改：
+
+```text
+optimizer.param_groups 里的 lr
+```
+
+常见现成策略：
+
+```text
+StepLR：
+每隔几轮把学习率乘一个比例。
+
+ReduceLROnPlateau：
+验证集长期不变好，就降低学习率。
+
+CosineAnnealingLR：
+学习率像余弦曲线一样平滑下降。
+
+warmup：
+训练初期先用小学习率，逐渐升高，再进入正常下降。
+```
+
+学习率策略是活的，可以自己写：
+
+```python
+def get_lr(epoch, val_loss=None):
+    if epoch < 5:
+        # warmup：前几轮慢慢升高。
+        return 0.0002 * (epoch + 1)
+
+    if val_loss is not None and val_loss > 0.5:
+        # 如果验证集表现不好，就保守一点。
+        return 0.0005
+
+    # 后期细调。
+    return 0.0001
+
+
+for epoch in range(num_epochs):
+    train_one_epoch()
+    val_loss = validate()
+
+    lr = get_lr(epoch, val_loss)
+
+    for group in optimizer.param_groups:
+        group["lr"] = lr
+```
+
+也可以用 PyTorch 的 `LambdaLR` 接入自定义规则：
+
+```python
+def lr_lambda(epoch):
+    if epoch < 5:
+        return (epoch + 1) / 5
+    return 0.95 ** (epoch - 5)
+
+
+scheduler = torch.optim.lr_scheduler.LambdaLR(
+    optimizer,
+    lr_lambda=lr_lambda,
+)
+```
+
+这里 `lr_lambda` 返回的是比例：
+
+```text
+当前 lr = 初始 lr * lr_lambda(epoch)
+```
+
+更进一步，optimizer 可以有多个参数组：
+
+```text
+embedding 层用小学习率
+新加的分类头用大学习率
+```
+
+人话理解：
+
+```text
+optimizer 负责走路。
+scheduler 负责调步子大小。
+
+训练前期可以步子大一点，快速靠近。
+训练后期步子小一点，避免震荡，细细修。
+```
+
+容易误解的地方：
+
+```text
+scheduler 不是只能用 PyTorch 内置的。
+只要你能写出规则，就能自己控制每个阶段的 lr。
+```
+
 ## 这一段的总总结
 
 ```text
