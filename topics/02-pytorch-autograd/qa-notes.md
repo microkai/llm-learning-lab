@@ -1576,6 +1576,151 @@ torch.cuda.is_available() 只是检查当前 PyTorch 环境有没有可用 CUDA 
 这不影响小 demo，只是不能用 GPU 加速。
 ```
 
+### 项目结构：把数据、模型、训练、验证、预测拆开
+
+一句话结论：
+
+```text
+真实 PyTorch 项目不是把所有代码写进一个文件，而是把“数据怎么来、模型怎么算、怎么训练、怎么验证、怎么预测、参数怎么配”拆成不同职责。
+```
+
+常见目录长这样：
+
+```text
+project/
+  data/
+    train.csv
+    val.csv
+  src/
+    dataset.py      # 数据怎么读、怎么清洗成 tensor
+    model.py        # 模型结构：主要是 __init__ 和 forward
+    train.py        # 训练 loop：forward -> loss -> backward -> step
+    evaluate.py     # 验证 / 测试：只看效果，不更新参数
+    predict.py      # 加载训练好的模型，对新数据预测
+    config.py       # batch_size、lr、hidden_size、路径等配置
+    utils.py        # 随机种子、日志、保存模型等通用小工具
+```
+
+人话版分工：
+
+```text
+dataset.py：
+把业务数据翻译成模型能吃的 features 和 target。
+
+model.py：
+定义模型怎么“思考”，也就是输入经过哪些层、哪些激活函数、最后输出什么。
+
+train.py：
+让模型反复练习。这里会调用 model(features)，算 loss，backward，step。
+
+evaluate.py：
+考试。只用验证集检查当前模型表现，不 backward，不 step。
+
+predict.py：
+上线使用。加载已经训练好的参数，对真实新订单、新图片、新文本做预测。
+
+config.py：
+统一放旋钮，比如学习率、batch size、隐藏层大小、训练轮数、文件路径。
+```
+
+一个最小的 `model.py`：
+
+```python
+import torch
+from torch import nn
+
+
+class OrderDelayModel(nn.Module):
+    def __init__(self, input_size, hidden_size):
+        super().__init__()
+
+        # 第一层：原始业务字段 -> 隐藏信号
+        # nn.Linear 会自动创建 weight 和 bias。
+        self.layer1 = nn.Linear(input_size, hidden_size)
+
+        # 第二层：隐藏信号 -> 一个结果
+        # 如果任务是“是否延迟发货”，这个结果可以理解成延迟风险分数。
+        self.output_layer = nn.Linear(hidden_size, 1)
+
+    def forward(self, features):
+        # features 是一个 batch 的输入，形状通常是 [batch_size, input_size]。
+        hidden = self.layer1(features)
+
+        # ReLU 是非线性开关，让模型不是只能拟合一条直线。
+        hidden = torch.relu(hidden)
+
+        # 输出最终预测。
+        return self.output_layer(hidden)
+```
+
+一个最小的 `train.py` 片段：
+
+```python
+import torch
+from torch import nn
+
+import config
+from model import OrderDelayModel
+from evaluate import evaluate
+
+
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
+# model 是模型对象。
+# model.parameters() 会把模型里所有可训练参数交给 optimizer。
+model = OrderDelayModel(
+    input_size=config.INPUT_SIZE,
+    hidden_size=config.HIDDEN_SIZE,
+).to(device)
+
+loss_fn = nn.BCEWithLogitsLoss()
+
+# optimizer 只负责根据参数的 .grad 更新参数值。
+optimizer = torch.optim.AdamW(
+    model.parameters(),
+    lr=config.LEARNING_RATE,
+    weight_decay=config.WEIGHT_DECAY,
+)
+
+for epoch in range(config.EPOCHS):
+    model.train()
+
+    for features, targets in train_loader:
+        features = features.to(device)
+        targets = targets.to(device)
+
+        optimizer.zero_grad()
+        predictions = model(features)
+        loss = loss_fn(predictions, targets)
+        loss.backward()
+        optimizer.step()
+
+    val_loss = evaluate(model, val_loader, loss_fn, device)
+```
+
+容易混在一起的边界：
+
+```text
+不要在 model.py 里写训练 loop。
+model.py 只负责“怎么算”，不负责“练多少轮、怎么保存、怎么验证”。
+
+不要在 Dataset 里做特别重的多表 merge。
+多表 join、字段清洗、异常处理一般先在数据处理阶段做好，再交给 Dataset。
+
+不要在 evaluate.py 里 backward 或 step。
+验证阶段是考试，不改参数。
+
+不要在 predict.py 里重新 fit 标准化参数。
+训练时算好的 mean/std、类别 vocab、tokenizer 规则，预测时要复用。
+```
+
+这段的核心：
+
+```text
+项目结构不是新数学。
+它只是把 PyTorch 训练流程拆成清楚的责任区，让项目变大以后还能维护。
+```
+
 ## 这一段的总总结
 
 ```text

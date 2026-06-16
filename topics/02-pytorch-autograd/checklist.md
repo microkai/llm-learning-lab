@@ -19,6 +19,8 @@
 - [ ] 我能指出 gradient clipping 应该放在 `loss.backward()` 之后、`optimizer.step()` 之前。
 - [ ] 我能解释 device 的作用，并知道 model、features、targets 必须在同一个 device 上。
 - [ ] 我能处理 dict batch，只把 tensor 调用 `.to(device)`，不移动字符串和路径。
+- [ ] 我能说出 dataset.py、model.py、train.py、evaluate.py、predict.py、config.py 各自负责什么。
+- [ ] 我能解释为什么不要把训练 loop 写进 model.py，也不要在 evaluate.py 里 backward 或 step。
 - [ ] 我能说出 PyTorch 帮我们省掉了上一节哪部分手写代码。
 
 ## 代码
